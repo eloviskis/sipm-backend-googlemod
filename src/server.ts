@@ -14,7 +14,7 @@ const sslOptions = {
 };
 
 https.createServer(sslOptions, app).listen(3000, () => {
-    console.log('HTTPS Server running on port 3000');
+    console.log('Servidor HTTPS rodando na porta 3000');
 });
 
 // Middlewares e rotas existentes...

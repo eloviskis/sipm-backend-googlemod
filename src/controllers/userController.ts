@@ -8,7 +8,7 @@ export const createUser = async (req: Request, res: Response) => {
         const { name, email, password, role, cnpj, cpf, financialResponsible, consent } = req.body;
 
         if (!consent) {
-            return res.status(400).send({ error: 'O consentimento do usuário é necessário para o processamento dos dados.' });
+            return res.status(400).send({ error: 'O consentimento do usuário é obrigatório para o processamento de dados.' });
         }
 
         // Criptografar a senha antes de salvar
@@ -39,9 +39,9 @@ export const updateUser = async (req: Request, res: Response) => {
         }
         updates.forEach(async (update) => {
             if (update === 'password') {
-                user[update] = await bcrypt.hash(req.body[update], 10); // Criptografar a nova senha
+                (user as any)[update] = await bcrypt.hash(req.body[update], 10); // Criptografar a nova senha
             } else {
-                user[update] = req.body[update];
+                (user as any)[update] = req.body[update];
             }
         });
         await user.save();
@@ -51,7 +51,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 };
 
-// Deletar usuário
+// Função para deletar um usuário
 export const deleteUser = async (req: Request, res: Response) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);

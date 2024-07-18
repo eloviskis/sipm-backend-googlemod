@@ -1,7 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-// Definir o esquema do usuário
+const themePreferencesSchema = new Schema({
+    primaryColor: {
+        type: String,
+        default: '#3498db', // Cor padrão
+    },
+    secondaryColor: {
+        type: String,
+        default: '#2ecc71', // Cor padrão
+    },
+    backgroundColor: {
+        type: String,
+        default: '#ecf0f1', // Cor padrão
+    },
+}, {
+    _id: false,
+});
+
 const userSchema = new Schema({
     name: {
         type: String,
@@ -33,11 +49,14 @@ const userSchema = new Schema({
         type: String,
         required: false,
     },
+    themePreferences: {
+        type: themePreferencesSchema,
+        required: false,
+    },
 }, {
     timestamps: true,
 });
 
-// Método para verificar a senha
 userSchema.methods.isValidPassword = async function (password: string) {
     const user = this as IUser;
     return bcrypt.compare(password, user.password);
@@ -51,6 +70,11 @@ export interface IUser extends Document {
     cnpj?: string;
     cpf?: string;
     financialResponsible?: string;
+    themePreferences?: {
+        primaryColor?: string;
+        secondaryColor?: string;
+        backgroundColor?: string;
+    };
     isValidPassword(password: string): Promise<boolean>;
 }
 

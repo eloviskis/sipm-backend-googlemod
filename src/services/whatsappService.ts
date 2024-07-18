@@ -13,7 +13,7 @@ export const sendWhatsAppMessage = async (to: string, message: string) => {
             to: `whatsapp:${to}`,
         });
         return response;
-    } catch (error) {
+    } catch (error: any) {
         throw new Error(error.message);
     }
 };

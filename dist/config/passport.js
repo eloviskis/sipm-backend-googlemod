@@ -29,17 +29,22 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: '/auth/google/callback'
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = yield user_1.default.findOne({ email: profile.emails[0].value });
-    if (!user) {
-        user = new user_1.default({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            password: '',
-            role: 'USER',
-        });
-        yield user.save();
+    try {
+        let user = yield user_1.default.findOne({ email: profile.emails[0].value });
+        if (!user) {
+            user = new user_1.default({
+                name: profile.displayName,
+                email: profile.emails[0].value,
+                password: '',
+                role: 'USER',
+            });
+            yield user.save();
+        }
+        return done(null, user);
     }
-    return done(null, user);
+    catch (error) {
+        return done(error, false);
+    }
 })));
 // Configuração do Facebook Strategy
 passport_1.default.use(new passport_facebook_1.Strategy({
@@ -48,17 +53,22 @@ passport_1.default.use(new passport_facebook_1.Strategy({
     callbackURL: '/auth/facebook/callback',
     profileFields: ['id', 'displayName', 'emails']
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = yield user_1.default.findOne({ email: profile.emails[0].value });
-    if (!user) {
-        user = new user_1.default({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            password: '',
-            role: 'USER',
-        });
-        yield user.save();
+    try {
+        let user = yield user_1.default.findOne({ email: profile.emails[0].value });
+        if (!user) {
+            user = new user_1.default({
+                name: profile.displayName,
+                email: profile.emails[0].value,
+                password: '',
+                role: 'USER',
+            });
+            yield user.save();
+        }
+        return done(null, user);
     }
-    return done(null, user);
+    catch (error) {
+        return done(error, false);
+    }
 })));
 // Configuração do LinkedIn Strategy
 passport_1.default.use(new passport_linkedin_oauth2_1.Strategy({
@@ -67,16 +77,21 @@ passport_1.default.use(new passport_linkedin_oauth2_1.Strategy({
     callbackURL: '/auth/linkedin/callback',
     scope: ['r_emailaddress', 'r_liteprofile'],
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
-    let user = yield user_1.default.findOne({ email: profile.emails[0].value });
-    if (!user) {
-        user = new user_1.default({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            password: '',
-            role: 'USER',
-        });
-        yield user.save();
+    try {
+        let user = yield user_1.default.findOne({ email: profile.emails[0].value });
+        if (!user) {
+            user = new user_1.default({
+                name: profile.displayName,
+                email: profile.emails[0].value,
+                password: '',
+                role: 'USER',
+            });
+            yield user.save();
+        }
+        return done(null, user);
     }
-    return done(null, user);
+    catch (error) {
+        return done(error, false);
+    }
 })));
 exports.default = passport_1.default;

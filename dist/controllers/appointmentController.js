@@ -20,9 +20,7 @@ const createAppointment = (req, res) => __awaiter(void 0, void 0, void 0, functi
     try {
         const appointment = new appointment_1.default(req.body);
         yield appointment.save();
-        // Adicionando notificação de confirmação
         (0, notificationService_1.sendAppointmentConfirmation)(req.body.email, req.body.date);
-        // Integração com calendários
         (0, calendarIntegrationService_1.integrateWithGoogleCalendar)(appointment);
         (0, calendarIntegrationService_1.integrateWithOutlookCalendar)(appointment);
         res.status(201).send(appointment);

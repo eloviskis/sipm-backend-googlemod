@@ -8,7 +8,7 @@ passport.serializeUser((user, done) => {
     done(null, user);
 });
 
-passport.deserializeUser((obj, done) => {
+passport.deserializeUser((obj: any, done) => {
     done(null, obj);
 });
 
@@ -18,18 +18,22 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     callbackURL: '/auth/google/callback'
 },
-    async (token, tokenSecret, profile, done) => {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (!user) {
-            user = new User({
-                name: profile.displayName,
-                email: profile.emails[0].value,
-                password: '',
-                role: 'USER',
-            });
-            await user.save();
+    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
+        try {
+            let user = await User.findOne({ email: profile.emails[0].value });
+            if (!user) {
+                user = new User({
+                    name: profile.displayName,
+                    email: profile.emails[0].value,
+                    password: '',
+                    role: 'USER',
+                });
+                await user.save();
+            }
+            return done(null, user);
+        } catch (error) {
+            return done(error, false);
         }
-        return done(null, user);
     }
 ));
 
@@ -40,18 +44,22 @@ passport.use(new FacebookStrategy({
     callbackURL: '/auth/facebook/callback',
     profileFields: ['id', 'displayName', 'emails']
 },
-    async (token, tokenSecret, profile, done) => {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (!user) {
-            user = new User({
-                name: profile.displayName,
-                email: profile.emails[0].value,
-                password: '',
-                role: 'USER',
-            });
-            await user.save();
+    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
+        try {
+            let user = await User.findOne({ email: profile.emails[0].value });
+            if (!user) {
+                user = new User({
+                    name: profile.displayName,
+                    email: profile.emails[0].value,
+                    password: '',
+                    role: 'USER',
+                });
+                await user.save();
+            }
+            return done(null, user);
+        } catch (error) {
+            return done(error, false);
         }
-        return done(null, user);
     }
 ));
 
@@ -62,18 +70,22 @@ passport.use(new LinkedInStrategy({
     callbackURL: '/auth/linkedin/callback',
     scope: ['r_emailaddress', 'r_liteprofile'],
 },
-    async (token, tokenSecret, profile, done) => {
-        let user = await User.findOne({ email: profile.emails[0].value });
-        if (!user) {
-            user = new User({
-                name: profile.displayName,
-                email: profile.emails[0].value,
-                password: '',
-                role: 'USER',
-            });
-            await user.save();
+    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
+        try {
+            let user = await User.findOne({ email: profile.emails[0].value });
+            if (!user) {
+                user = new User({
+                    name: profile.displayName,
+                    email: profile.emails[0].value,
+                    password: '',
+                    role: 'USER',
+                });
+                await user.save();
+            }
+            return done(null, user);
+        } catch (error) {
+            return done(error, false);
         }
-        return done(null, user);
     }
 ));
 

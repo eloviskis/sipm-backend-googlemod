@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import https from 'https';
 import path from 'path';
-import profileRoutes from './routes/profileRoutes';
+
 // Importações das rotas restantes...
 
 const app = express();
@@ -18,7 +18,7 @@ https.createServer(sslOptions, app).listen(3000, () => {
 });
 
 // Middlewares e rotas existentes...
-app.use(profileRoutes);
+
 // Adicionar as rotas restantes...
 
 app.get('/', (req, res) => {

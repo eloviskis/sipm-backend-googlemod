@@ -7,9 +7,7 @@ export const createAppointment = async (req: Request, res: Response) => {
     try {
         const appointment = new Appointment(req.body);
         await appointment.save();
-        // Adicionando notificação de confirmação
         sendAppointmentConfirmation(req.body.email, req.body.date);
-        // Integração com calendários
         integrateWithGoogleCalendar(appointment);
         integrateWithOutlookCalendar(appointment);
         res.status(201).send(appointment);

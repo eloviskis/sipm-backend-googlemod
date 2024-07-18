@@ -1,10 +1,11 @@
-import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
 import { Client } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import { ConfidentialClientApplication } from '@azure/msal-node';
 
 // Configuração do Google Calendar
+import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
+
 const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID!,
     process.env.GOOGLE_CLIENT_SECRET!,
@@ -49,14 +50,8 @@ const msalConfig = {
 
 const cca = new ConfidentialClientApplication(msalConfig);
 
-const authProvider = new TokenCredentialAuthenticationProvider({
-    getAccessToken: async () => {
-        const result = await cca.acquireTokenByClientCredential({
-            scopes: ['https://graph.microsoft.com/.default'],
-        });
-
-        return result?.accessToken || '';
-    },
+const authProvider = new TokenCredentialAuthenticationProvider(cca, {
+    scopes: ['https://graph.microsoft.com/.default'],
 });
 
 // Função para integrar com Outlook Calendar

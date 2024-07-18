@@ -78,7 +78,7 @@ export const sendReminder = async (req: Request, res: Response) => {
         if (!appointment) {
             return res.status(404).send();
         }
-        sendAppointmentReminder(appointment.email, appointment.date);
+        sendAppointmentReminder(req.body.email, appointment.date);
         res.send({ message: 'Lembrete enviado com sucesso' });
     } catch (error) {
         res.status(500).send(error);

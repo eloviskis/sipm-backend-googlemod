@@ -34,7 +34,7 @@ export const createVideoRoom = async (roomName: string) => {
         });
 
         return room;
-    } catch (error) {
+    } catch (error: any) {
         throw new Error(`Erro ao criar sala de vídeo: ${error.message}`);
     }
 };

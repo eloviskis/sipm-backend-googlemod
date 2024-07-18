@@ -1,11 +1,8 @@
 import { Router } from 'express';
-import multer from 'multer';
-import { uploadDocument } from '../controllers/fileController';
+import { uploadFile, uploadMiddleware } from '../controllers/fileController';
 
 const router = Router();
-const upload = multer();
 
-// Rota para upload de documentos
-router.post('/upload', upload.single('file'), uploadDocument);
+router.post('/upload', uploadMiddleware, uploadFile);
 
 export default router;

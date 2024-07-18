@@ -1,15 +1,23 @@
 import { Request, Response } from 'express';
-import { uploadFile } from '../services/googleDriveService';
+import multer from 'multer';
 
-export const uploadDocument = async (req: Request, res: Response) => {
-    try {
-        const file = req.file;
-        if (!file) {
-            return res.status(400).send({ error: 'Nenhum arquivo enviado.' });
-        }
-        const result = await uploadFile(file);
-        res.status(201).send(result);
-    } catch (error) {
-        res.status(500).send(error);
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
     }
+});
+
+const upload = multer({ storage });
+
+export const uploadFile = (req: Request, res: Response) => {
+    const file = req.file;
+    if (!file) {
+        return res.status(400).send({ message: 'Por favor, faça o upload de um arquivo' });
+    }
+    res.send({ message: 'Arquivo carregado com sucesso', file });
 };
+
+export const uploadMiddleware = upload.single('file');

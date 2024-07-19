@@ -50,7 +50,21 @@ const msalConfig = {
     },
 };
 const cca = new msal_node_1.ConfidentialClientApplication(msalConfig);
-const authProvider = new azureTokenCredentials_1.TokenCredentialAuthenticationProvider(cca, {
+class CustomTokenCredential {
+    constructor(cca) {
+        this.cca = cca;
+    }
+    getToken(scopes) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this.cca.acquireTokenByClientCredential({
+                scopes: scopes,
+            });
+            return (result === null || result === void 0 ? void 0 : result.accessToken) ? { token: result.accessToken, expiresOnTimestamp: 0 } : null;
+        });
+    }
+}
+const customTokenCredential = new CustomTokenCredential(cca);
+const authProvider = new azureTokenCredentials_1.TokenCredentialAuthenticationProvider(customTokenCredential, {
     scopes: ['https://graph.microsoft.com/.default'],
 });
 // Função para integrar com Outlook Calendar

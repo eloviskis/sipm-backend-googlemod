@@ -94,7 +94,7 @@ const sendReminder = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!appointment) {
             return res.status(404).send();
         }
-        (0, notificationService_1.sendAppointmentReminder)(appointment.email, appointment.date);
+        (0, notificationService_1.sendAppointmentReminder)(req.body.email, appointment.date);
         res.send({ message: 'Lembrete enviado com sucesso' });
     }
     catch (error) {

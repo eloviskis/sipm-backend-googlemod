@@ -50,7 +50,26 @@ const msalConfig = {
 
 const cca = new ConfidentialClientApplication(msalConfig);
 
-const authProvider = new TokenCredentialAuthenticationProvider(cca, {
+import { AccessToken } from '@azure/core-auth';
+
+class CustomTokenCredential {
+    cca: ConfidentialClientApplication;
+
+    constructor(cca: ConfidentialClientApplication) {
+        this.cca = cca;
+    }
+
+    async getToken(scopes: string[]): Promise<AccessToken | null> {
+        const result = await this.cca.acquireTokenByClientCredential({
+            scopes: scopes,
+        });
+        return result?.accessToken ? { token: result.accessToken, expiresOnTimestamp: 0 } : null;
+    }
+}
+
+const customTokenCredential = new CustomTokenCredential(cca);
+
+const authProvider = new TokenCredentialAuthenticationProvider(customTokenCredential, {
     scopes: ['https://graph.microsoft.com/.default'],
 });
 

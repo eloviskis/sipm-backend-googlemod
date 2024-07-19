@@ -1,27 +1,25 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadDocument = void 0;
-const googleDriveService_1 = require("../services/googleDriveService");
-const uploadDocument = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const file = req.file;
-        if (!file) {
-            return res.status(400).send({ error: 'Nenhum arquivo enviado.' });
-        }
-        const result = yield (0, googleDriveService_1.uploadFile)(file);
-        res.status(201).send(result);
-    }
-    catch (error) {
-        res.status(500).send(error);
+exports.uploadMiddleware = exports.uploadFile = void 0;
+const multer_1 = __importDefault(require("multer"));
+const storage = multer_1.default.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
-exports.uploadDocument = uploadDocument;
+const upload = (0, multer_1.default)({ storage });
+const uploadFile = (req, res) => {
+    const file = req.file;
+    if (!file) {
+        return res.status(400).send({ message: 'Por favor, faça o upload de um arquivo' });
+    }
+    res.send({ message: 'Arquivo carregado com sucesso', file });
+};
+exports.uploadFile = uploadFile;
+exports.uploadMiddleware = upload.single('file');

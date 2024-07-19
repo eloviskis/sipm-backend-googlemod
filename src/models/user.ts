@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { BaseSchema } from '../types/Schema';
 
-const themePreferencesSchema = new Schema({
+const themePreferencesSchema = new Schema<BaseSchema>({
     primaryColor: {
         type: String,
         default: '#3498db', // Cor padrão
@@ -18,7 +19,7 @@ const themePreferencesSchema = new Schema({
     _id: false,
 });
 
-const userSchema = new Schema({
+const userSchema = new Schema<IUser>({
     name: {
         type: String,
         required: true,
@@ -62,7 +63,7 @@ userSchema.methods.isValidPassword = async function (password: string) {
     return bcrypt.compare(password, user.password);
 };
 
-export interface IUser extends Document {
+export interface IUser extends Document, BaseSchema {
     name: string;
     email: string;
     password: string;

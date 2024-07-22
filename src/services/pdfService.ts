@@ -1,21 +1,28 @@
-import PDFDocument from 'pdfkit';
 import { Response } from 'express';
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 
-export const generateInvoice = (res: Response, invoiceData: any) => {
-    const doc = new PDFDocument();
-    res.setHeader('Content-Disposition', 'attachment; filename=invoice.pdf');
-    res.setHeader('Content-Type', 'application/pdf');
-    doc.pipe(res);
+export const generateInvoice = (invoiceData: any): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument();
+        const invoicePath = path.join(__dirname, `../../invoices/invoice-${Date.now()}.pdf`);
 
-    doc.fontSize(25).text('Recibo de Pagamento', { align: 'center' });
-    doc.text('----------------------------------------', { align: 'center' });
+        doc.pipe(fs.createWriteStream(invoicePath));
 
-    doc.fontSize(18).text(`Nome: ${invoiceData.name}`, { align: 'left' });
-    doc.text(`Data: ${invoiceData.date}`, { align: 'left' });
-    doc.text(`Valor: ${invoiceData.amount}`, { align: 'left' });
-    doc.text(`Descrição: ${invoiceData.description}`, { align: 'left' });
+        // Adicione conteúdo ao PDF aqui
+        doc.text(`Fatura para ${invoiceData.clientName}`, 50, 50);
+        doc.text(`Data: ${new Date().toLocaleDateString()}`, 50, 70);
+        doc.text(`Total: R$${invoiceData.total}`, 50, 90);
+        
+        doc.end();
 
-    doc.text('----------------------------------------', { align: 'center' });
+        doc.on('finish', () => {
+            resolve(invoicePath);
+        });
 
-    doc.end();
+        doc.on('error', (error) => {
+            reject(error);
+        });
+    });
 };

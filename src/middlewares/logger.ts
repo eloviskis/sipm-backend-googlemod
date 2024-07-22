@@ -1,8 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-
-const logger = (req: Request, res: Response, next: NextFunction) => {
-    console.info(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-    next();
+const logger = (level: 'info' | 'error', message: string, meta?: any) => {
+    console[level](`${new Date().toISOString()} - ${message}`, meta);
 };
 
 export default logger;

@@ -4,7 +4,7 @@ import User, { IUser } from '../models/user'; // Certifique-se de importar o mod
 
 const mfaMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     if (req.user) {
-        const user: IUser | null = await User.findById(req.user._id);
+        const user: IUser | null = await User.findById((req.user as IUser)._id);
         if (user && user.mfaEnabled) {
             const token = req.header('x-mfa-token');
             if (!token) {

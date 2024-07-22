@@ -17,22 +17,37 @@ import themePreferencesRoutes from './routes/themePreferencesRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
 import { ensureHttps } from './middlewares/httpsRedirect';
+import mfaMiddleware from './middlewares/mfaMiddleware'; // Adicionando middleware para MFA
+import logger from './middlewares/logger'; // Adicionando middleware de logger
 
 const app = express();
 
-// Middleware para garantir HTTPS
-app.use(ensureHttps);
+// Middleware para garantir HTTPS em produção
+if (process.env.NODE_ENV === 'production') {
+    app.use(ensureHttps);
+}
 
-// Configuração da sessão
+// Middleware de Logger para monitorar atividades
+app.use(logger);
+
+// Configuração da sessão   
 app.use(session({
-    secret: 'your_secret_key',
+    secret: process.env.SESSION_SECRET || 'default_secret', // Use uma variável de ambiente para a chave secreta
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
+        maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    }
 }));
 
 // Inicialização do Passport
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Middleware para autenticação multifator (MFA)
+app.use(mfaMiddleware);
 
 app.use(express.json());
 app.use('/api/auth', authRoutes); // Adicionando rotas de autenticação

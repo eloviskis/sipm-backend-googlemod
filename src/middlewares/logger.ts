@@ -1,5 +1,10 @@
 const logger = (level: 'info' | 'error', message: string, meta?: any) => {
-    console[level](`${new Date().toISOString()} - ${message}`, meta);
+    const logMessage = `${new Date().toISOString()} - ${level.toUpperCase()}: ${message}`;
+    if (meta) {
+        console[level](logMessage, meta);
+    } else {
+        console[level](logMessage);
+    }
 };
 
 export default logger;

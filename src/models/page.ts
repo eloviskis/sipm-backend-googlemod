@@ -4,10 +4,25 @@ const pageSchema = new Schema({
     title: {
         type: String,
         required: true,
+        trim: true,
     },
     content: {
         type: String,
         required: true,
+        trim: true,
+    },
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    published: {
+        type: Boolean,
+        default: false,
+    },
+    tags: {
+        type: [String],
+        default: [],
     },
 }, {
     timestamps: true,
@@ -16,6 +31,9 @@ const pageSchema = new Schema({
 export interface IPage extends Document {
     title: string;
     content: string;
+    author: string;
+    published: boolean;
+    tags: string[];
 }
 
 const Page = mongoose.model<IPage>('Page', pageSchema);

@@ -1,4 +1,5 @@
 import Twilio from 'twilio';
+import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
 // Configuração do Twilio
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID!;
@@ -22,6 +23,7 @@ export const generateVideoToken = (identity: string) => {
 
     token.addGrant(videoGrant);
 
+    logger('info', `Token de vídeo gerado para: ${identity}`); // Adicionando log de geração de token
     return token.toJwt();
 };
 
@@ -33,8 +35,10 @@ export const createVideoRoom = async (roomName: string) => {
             type: 'group',
         });
 
+        logger('info', `Sala de vídeo criada: ${room.sid}`); // Adicionando log de criação de sala
         return room;
     } catch (error: any) {
+        logger('error', `Erro ao criar sala de vídeo: ${error.message}`); // Adicionando log de erro
         throw new Error(`Erro ao criar sala de vídeo: ${error.message}`);
     }
 };

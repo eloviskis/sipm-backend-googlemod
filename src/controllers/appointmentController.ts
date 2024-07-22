@@ -11,16 +11,16 @@ export const createAppointment = async (req: Request, res: Response) => {
         await appointment.save();
 
         // Enviar confirmação de agendamento
-        sendAppointmentConfirmation(req.body.email, req.body.date);
+        await sendAppointmentConfirmation(req.body.email, req.body.date);
 
         // Integração com Google Calendar e Outlook Calendar
-        integrateWithGoogleCalendar(appointment);
-        integrateWithOutlookCalendar(appointment);
+        await integrateWithGoogleCalendar(appointment);
+        await integrateWithOutlookCalendar(appointment);
 
-        logger.info(`Agendamento criado: ${appointment._id}`); // Adicionando log de criação de agendamento
+        logger('info', `Agendamento criado: ${appointment._id}`); // Adicionando log de criação de agendamento
         res.status(201).send(appointment);
-    } catch (error) {
-        logger.error('Erro ao criar agendamento:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao criar agendamento:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 };
@@ -30,8 +30,8 @@ export const getAppointments = async (req: Request, res: Response) => {
     try {
         const appointments = await Appointment.find({});
         res.send(appointments);
-    } catch (error) {
-        logger.error('Erro ao obter agendamentos:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao obter agendamentos:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 };
@@ -41,11 +41,12 @@ export const getAppointment = async (req: Request, res: Response) => {
     try {
         const appointment = await Appointment.findById(req.params.id);
         if (!appointment) {
+            logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
         res.send(appointment);
-    } catch (error) {
-        logger.error('Erro ao obter agendamento:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao obter agendamento:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 };
@@ -63,15 +64,16 @@ export const updateAppointment = async (req: Request, res: Response) => {
     try {
         const appointment: any = await Appointment.findById(req.params.id);
         if (!appointment) {
+            logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
         updates.forEach((update) => (appointment[update as keyof typeof appointment] = req.body[update]));
         await appointment.save();
 
-        logger.info(`Agendamento atualizado: ${appointment._id}`); // Adicionando log de atualização de agendamento
+        logger('info', `Agendamento atualizado: ${appointment._id}`); // Adicionando log de atualização de agendamento
         res.send(appointment);
-    } catch (error) {
-        logger.error('Erro ao atualizar agendamento:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao atualizar agendamento:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 };
@@ -81,13 +83,14 @@ export const deleteAppointment = async (req: Request, res: Response) => {
     try {
         const appointment = await Appointment.findByIdAndDelete(req.params.id);
         if (!appointment) {
+            logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
 
-        logger.info(`Agendamento deletado: ${appointment._id}`); // Adicionando log de exclusão de agendamento
+        logger('info', `Agendamento deletado: ${appointment._id}`); // Adicionando log de exclusão de agendamento
         res.send(appointment);
-    } catch (error) {
-        logger.error('Erro ao deletar agendamento:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao deletar agendamento:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 };
@@ -97,13 +100,14 @@ export const sendReminder = async (req: Request, res: Response) => {
     try {
         const appointment = await Appointment.findById(req.params.id);
         if (!appointment) {
+            logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        sendAppointmentReminder(req.body.email, appointment.date);
-        logger.info(`Lembrete enviado para o agendamento: ${appointment._id}`); // Adicionando log de envio de lembrete
+        await sendAppointmentReminder(req.body.email, appointment.date);
+        logger('info', `Lembrete enviado para o agendamento: ${appointment._id}`); // Adicionando log de envio de lembrete
         res.send({ message: 'Lembrete enviado com sucesso' });
-    } catch (error) {
-        logger.error('Erro ao enviar lembrete:', error); // Adicionando log de erro
+    } catch (error: any) {
+        logger('error', 'Erro ao enviar lembrete:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 };

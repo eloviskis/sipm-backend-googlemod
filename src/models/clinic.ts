@@ -26,6 +26,34 @@ const clinicSchema = new Schema({
             required: false,
         },
     },
+    address: {
+        street: {
+            type: String,
+            required: true,
+        },
+        city: {
+            type: String,
+            required: true,
+        },
+        state: {
+            type: String,
+            required: true,
+        },
+        zipCode: {
+            type: String,
+            required: true,
+        },
+    },
+    contactInfo: {
+        phone: {
+            type: String,
+            required: true,
+        },
+        email: {
+            type: String,
+            required: true,
+        },
+    },
 }, {
     timestamps: true,
 });
@@ -37,6 +65,16 @@ export interface IClinic extends Document {
     customization?: {
         values?: Map<string, string>;
         reports?: Map<string, string>;
+    };
+    address: {
+        street: string;
+        city: string;
+        state: string;
+        zipCode: string;
+    };
+    contactInfo: {
+        phone: string;
+        email: string;
     };
 }
 

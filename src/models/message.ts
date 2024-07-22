@@ -14,10 +14,16 @@ const messageSchema = new Schema({
     subject: {
         type: String,
         required: true,
+        trim: true,
     },
     content: {
         type: String,
         required: true,
+        trim: true,
+    },
+    read: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,
@@ -28,6 +34,7 @@ export interface IMessage extends Document {
     to: string;
     subject: string;
     content: string;
+    read: boolean;
 }
 
 const Message = mongoose.model<IMessage>('Message', messageSchema);

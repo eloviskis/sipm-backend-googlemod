@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/user';
 import bcrypt from 'bcryptjs';
+import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
 // Função para criar um novo usuário com criptografia de senha
 export const createUser = async (req: Request, res: Response) => {
@@ -16,8 +17,11 @@ export const createUser = async (req: Request, res: Response) => {
 
         const user = new User({ name, email, password: hashedPassword, role, cnpj, cpf, financialResponsible });
         await user.save();
+
+        logger.info(`Usuário criado: ${user._id}`); // Adicionando log de criação de usuário
         res.status(201).send(user);
     } catch (error) {
+        logger.error('Erro ao criar usuário:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 };
@@ -45,8 +49,11 @@ export const updateUser = async (req: Request, res: Response) => {
             }
         });
         await user.save();
+
+        logger.info(`Usuário atualizado: ${user._id}`); // Adicionando log de atualização de usuário
         res.send(user);
     } catch (error) {
+        logger.error('Erro ao atualizar usuário:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 };
@@ -58,8 +65,11 @@ export const deleteUser = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(404).send();
         }
+
+        logger.info(`Usuário deletado: ${user._id}`); // Adicionando log de exclusão de usuário
         res.send({ message: 'Usuário deletado com sucesso.' });
     } catch (error) {
+        logger.error('Erro ao deletar usuário:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 };

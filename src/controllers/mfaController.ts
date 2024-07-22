@@ -1,19 +1,21 @@
 import { Request, Response } from 'express';
-import * as speakeasy from 'speakeasy';
-import * as qrcode from 'qrcode';
+import speakeasy from 'speakeasy';
+import qrcode from 'qrcode';
 
 export const configureMFA = (req: Request, res: Response) => {
     const secret = speakeasy.generateSecret({ length: 20 });
-    if (secret.otpauth_url) {
-        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
-            if (err) {
-                return res.status(500).send('Erro ao gerar QR Code');
-            }
-            res.send({ secret: secret.base32, qrCode: data_url });
-        });
-    } else {
-        res.status(500).send('Erro ao gerar URL OTPAuth');
-    }
+
+    qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+        if (err) {
+            return res.status(500).send('Erro ao gerar QR Code');
+        }
+
+        // Salvar a chave MFA no usuário (deveria ser implementado)
+        // req.user.mfaSecret = secret.base32;
+        // req.user.save();
+
+        res.send({ secret: secret.base32, qrCode: data_url });
+    });
 };
 
 export const verifyMFA = (req: Request, res: Response) => {
@@ -23,6 +25,7 @@ export const verifyMFA = (req: Request, res: Response) => {
         encoding: 'base32',
         token,
     });
+
     if (verified) {
         res.send('MFA verificado com sucesso');
     } else {

@@ -54,9 +54,13 @@ const userSchema = new Schema<IUser>({
         type: themePreferencesSchema,
         required: false,
     },
-    mfaVerified: {
+    mfaEnabled: {
         type: Boolean,
         default: false,
+    },
+    mfaSecret: {
+        type: String,
+        required: false,
     },
 }, {
     timestamps: true,
@@ -80,7 +84,8 @@ export interface IUser extends Document, BaseSchema {
         secondaryColor?: string;
         backgroundColor?: string;
     };
-    mfaVerified: boolean;
+    mfaEnabled: boolean;
+    mfaSecret?: string;
     isValidPassword(password: string): Promise<boolean>;
 }
 

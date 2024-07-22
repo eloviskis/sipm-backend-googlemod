@@ -1,11 +1,11 @@
 import { Client } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import { ConfidentialClientApplication } from '@azure/msal-node';
-
-// Configuração do Google Calendar
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+import { AccessToken } from '@azure/core-auth';
 
+// Configuração do Google Calendar
 const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID!,
     process.env.GOOGLE_CLIENT_SECRET!,
@@ -33,10 +33,19 @@ export const integrateWithGoogleCalendar = async (appointment: any) => {
         },
     };
 
-    await calendar.events.insert({
-        calendarId: 'primary',
-        requestBody: event,
-    });
+    try {
+        const response = await calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: event,
+        });
+        console.info(`Evento criado no Google Calendar: ${response.data.htmlLink}`);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Erro ao criar evento no Google Calendar: ${error.message}`);
+        } else {
+            console.error('Erro desconhecido ao criar evento no Google Calendar');
+        }
+    }
 };
 
 // Configuração do Outlook Calendar
@@ -49,8 +58,6 @@ const msalConfig = {
 };
 
 const cca = new ConfidentialClientApplication(msalConfig);
-
-import { AccessToken } from '@azure/core-auth';
 
 class CustomTokenCredential {
     cca: ConfidentialClientApplication;
@@ -93,5 +100,14 @@ export const integrateWithOutlookCalendar = async (appointment: any) => {
         },
     };
 
-    await client.api('/me/events').post(event);
+    try {
+        const response = await client.api('/me/events').post(event);
+        console.info(`Evento criado no Outlook Calendar: ${response.id}`);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Erro ao criar evento no Outlook Calendar: ${error.message}`);
+        } else {
+            console.error('Erro desconhecido ao criar evento no Outlook Calendar');
+        }
+    }
 };

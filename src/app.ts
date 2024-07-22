@@ -14,6 +14,7 @@ import messageRoutes from './routes/messageRoutes';
 import reportRoutes from './routes/reportRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
 import themePreferencesRoutes from './routes/themePreferencesRoutes';
+import paymentRoutes from './routes/paymentRoutes'; // Adicionando rotas de pagamentos
 import { errorHandler } from './middlewares/errorHandler';
 import { authMiddleware } from './middlewares/authMiddleware';
 import { ensureHttps } from './middlewares/httpsRedirect';
@@ -30,7 +31,7 @@ if (process.env.NODE_ENV === 'production') {
 // Middleware de Logger para monitorar atividades
 app.use(logger);
 
-// Configuração da sessão   
+// Configuração da sessão
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret', // Use uma variável de ambiente para a chave secreta
     resave: false,
@@ -64,6 +65,7 @@ app.use('/api', messageRoutes); // Adicionando rotas de mensagens
 app.use('/api', reportRoutes); // Adicionando rotas de relatórios
 app.use('/api', whatsappRoutes); // Adicionando rotas de WhatsApp
 app.use('/api', themePreferencesRoutes); // Adicionando rotas de preferências de tema
+app.use('/api', paymentRoutes); // Adicionando rotas de pagamentos
 app.use(errorHandler);
 
 export default app;

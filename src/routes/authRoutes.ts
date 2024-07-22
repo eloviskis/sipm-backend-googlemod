@@ -43,4 +43,3 @@ router.post('/auth/mfa/setup', configureMFA);
 router.post('/auth/mfa/verify', verifyMFA);
 
 export default router;
-    

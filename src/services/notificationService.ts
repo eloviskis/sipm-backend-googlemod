@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Função para enviar confirmação de agendamento
-export const sendAppointmentConfirmation = (email: string, date: Date) => {
+export const sendAppointmentConfirmation = async (email: string, date: Date) => {
     const mailOptions = {
         from: process.env.GMAIL_USER!,
         to: email,
@@ -18,17 +18,16 @@ export const sendAppointmentConfirmation = (email: string, date: Date) => {
         text: `Sua consulta foi agendada para ${date}.`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log(`Erro ao enviar email: ${error.message}`);
-        } else {
-            console.log(`Email enviado: ${info.response}`);
-        }
-    });
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email de confirmação enviado: ${info.response}`);
+    } catch (error) {
+        console.error(`Erro ao enviar email de confirmação: ${(error as Error).message}`);
+    }
 };
 
 // Função para enviar lembrete de agendamento
-export const sendAppointmentReminder = (email: string, date: Date) => {
+export const sendAppointmentReminder = async (email: string, date: Date) => {
     const mailOptions = {
         from: process.env.GMAIL_USER!,
         to: email,
@@ -36,11 +35,10 @@ export const sendAppointmentReminder = (email: string, date: Date) => {
         text: `Lembrete: Sua consulta está agendada para ${date}.`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log(`Erro ao enviar email: ${error.message}`);
-        } else {
-            console.log(`Email enviado: ${info.response}`);
-        }
-    });
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email de lembrete enviado: ${info.response}`);
+    } catch (error) {
+        console.error(`Erro ao enviar email de lembrete: ${(error as Error).message}`);
+    }
 };

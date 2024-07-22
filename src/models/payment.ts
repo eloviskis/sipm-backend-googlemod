@@ -3,19 +3,21 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IPayment extends Document {
     userId: string;
     amount: number;
-    status: string;
+    status: 'PENDING' | 'COMPLETED' | 'FAILED';
     method: string;
     invoiceId: string;
 }
 
 const paymentSchema = new Schema<IPayment>({
     userId: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'User',
         required: true,
     },
     amount: {
         type: Number,
         required: true,
+        min: 0,
     },
     status: {
         type: String,
@@ -27,7 +29,8 @@ const paymentSchema = new Schema<IPayment>({
         required: true,
     },
     invoiceId: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'Invoice',
         required: true,
     },
 }, {

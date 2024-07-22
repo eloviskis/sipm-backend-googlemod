@@ -4,12 +4,17 @@ import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
 import User from '../models/user';
 
-passport.serializeUser((user, done) => {
-    done(null, user);
+passport.serializeUser((user: any, done) => {
+    done(null, user.id);
 });
 
-passport.deserializeUser((obj: any, done) => {
-    done(null, obj);
+passport.deserializeUser(async (id: string, done) => {
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (error) {
+        done(error, null);
+    }
 });
 
 // Configuração do Google Strategy

@@ -29,7 +29,10 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Middleware de Logger para monitorar atividades
-app.use(logger);
+app.use((req, res, next) => {
+    logger("info", "Request logged", { method: req.method, url: req.url });
+    next();
+});
 
 // Configuração da sessão
 app.use(session({

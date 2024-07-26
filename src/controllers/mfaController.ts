@@ -5,6 +5,10 @@ import qrcode from 'qrcode';
 export const configureMFA = (req: Request, res: Response) => {
     const secret = speakeasy.generateSecret({ length: 20 });
 
+    if (!secret.otpauth_url) {
+        return res.status(500).send('Erro ao gerar o URL OTP Auth');
+    }
+
     qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
         if (err) {
             return res.status(500).send('Erro ao gerar QR Code');

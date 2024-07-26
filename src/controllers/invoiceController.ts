@@ -1,14 +1,8 @@
+import { AuthRequest } from '../types'; // Certifique-se de que o caminho para o arquivo está correto
 import { Request, Response } from 'express';
 import { generateInvoice } from '../services/pdfService';
 import { sendInvoiceEmail } from '../services/invoiceNotificationService';
-import logger from '../middlewares/logger'; // Adicionando middleware de logger
-
-interface AuthRequest extends Request {
-    user?: {
-        _id: string;
-        email: string;
-    };
-}
+import logger from '../middlewares/logger';
 
 export const createInvoice = async (req: AuthRequest, res: Response) => {
     try {
@@ -25,11 +19,16 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
         // Enviar a fatura por e-mail
         await sendInvoiceEmail(req.user.email, invoicePath);
 
-        logger('info', `Fatura gerada e enviada: ${invoicePath}`); // Adicionando log de criação de fatura
+        logger('info', `Fatura gerada e enviada: ${invoicePath}`);
 
         res.status(201).send({ message: 'Fatura gerada e enviada com sucesso' });
     } catch (error) {
-        logger('error', 'Erro ao criar fatura:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        if (error instanceof Error) {
+            logger('error', `Erro ao criar fatura: ${error.message}`, error);
+            res.status(500).send({ error: 'Erro ao criar fatura', details: error.message });
+        } else {
+            logger('error', 'Erro ao criar fatura:', error);
+            res.status(500).send({ error: 'Erro ao criar fatura', details: 'Erro desconhecido' });
+        }
     }
 };

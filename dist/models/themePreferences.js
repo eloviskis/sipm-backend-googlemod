@@ -24,62 +24,29 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const clinicSchema = new mongoose_1.Schema({
-    name: {
-        type: String,
+const themePreferencesSchema = new mongoose_1.Schema({
+    userId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
         required: true,
     },
-    cnpj: {
+    primaryColor: {
         type: String,
         required: true,
-        unique: true,
+        trim: true,
     },
-    financialResponsible: {
+    secondaryColor: {
         type: String,
         required: true,
+        trim: true,
     },
-    customization: {
-        values: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-        reports: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-    },
-    address: {
-        street: {
-            type: String,
-            required: true,
-        },
-        city: {
-            type: String,
-            required: true,
-        },
-        state: {
-            type: String,
-            required: true,
-        },
-        zipCode: {
-            type: String,
-            required: true,
-        },
-    },
-    contactInfo: {
-        phone: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
+    backgroundColor: {
+        type: String,
+        required: true,
+        trim: true,
     },
 }, {
     timestamps: true,
 });
-const Clinic = mongoose_1.default.model('Clinic', clinicSchema);
-exports.default = Clinic;
+const ThemePreferences = mongoose_1.default.model('ThemePreferences', themePreferencesSchema);
+exports.default = ThemePreferences;

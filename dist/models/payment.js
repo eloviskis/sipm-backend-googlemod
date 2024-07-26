@@ -24,62 +24,33 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const clinicSchema = new mongoose_1.Schema({
-    name: {
+const paymentSchema = new mongoose_1.Schema({
+    userId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    amount: {
+        type: Number,
+        required: true,
+        min: 0,
+    },
+    status: {
+        type: String,
+        required: true,
+        enum: ['PENDING', 'COMPLETED', 'FAILED'],
+    },
+    method: {
         type: String,
         required: true,
     },
-    cnpj: {
-        type: String,
+    invoiceId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Invoice',
         required: true,
-        unique: true,
-    },
-    financialResponsible: {
-        type: String,
-        required: true,
-    },
-    customization: {
-        values: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-        reports: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-    },
-    address: {
-        street: {
-            type: String,
-            required: true,
-        },
-        city: {
-            type: String,
-            required: true,
-        },
-        state: {
-            type: String,
-            required: true,
-        },
-        zipCode: {
-            type: String,
-            required: true,
-        },
-    },
-    contactInfo: {
-        phone: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
     },
 }, {
     timestamps: true,
 });
-const Clinic = mongoose_1.default.model('Clinic', clinicSchema);
-exports.default = Clinic;
+const Payment = mongoose_1.default.model('Payment', paymentSchema);
+exports.default = Payment;

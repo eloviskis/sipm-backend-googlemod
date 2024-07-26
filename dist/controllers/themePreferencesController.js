@@ -14,19 +14,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateThemePreferences = void 0;
 const user_1 = __importDefault(require("../models/user"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+// Função para atualizar as preferências de tema do usuário
 const updateThemePreferences = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     const { primaryColor, secondaryColor, backgroundColor } = req.body;
     try {
         const user = yield user_1.default.findById(userId);
         if (!user) {
+            (0, logger_1.default)('error', `Usuário não encontrado: ${userId}`); // Adicionando log de erro
             return res.status(404).send({ error: 'Usuário não encontrado.' });
         }
         user.themePreferences = { primaryColor, secondaryColor, backgroundColor };
         yield user.save();
+        (0, logger_1.default)('info', `Preferências de tema atualizadas para o usuário: ${userId}`); // Adicionando log de sucesso
         res.send(user.themePreferences);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao atualizar preferências de tema:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 });

@@ -13,19 +13,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
-// Função para conectar ao banco de dados MongoDB
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield mongoose_1.default.connect(process.env.MONGO_URI, {
+        yield mongoose_1.default.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useCreateIndex: true,
             useFindAndModify: false,
         });
-        console.log('MongoDB conectado...');
+        (0, logger_1.default)('info', 'Conexão com o MongoDB estabelecida com sucesso');
     }
-    catch (err) {
-        console.error(err.message);
+    catch (error) {
+        (0, logger_1.default)('error', 'Erro ao conectar ao MongoDB:', error);
         process.exit(1);
     }
 });

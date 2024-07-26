@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.updateUser = exports.createUser = void 0;
 const user_1 = __importDefault(require("../models/user"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 // Função para criar um novo usuário com criptografia de senha
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -26,9 +27,11 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
         const user = new user_1.default({ name, email, password: hashedPassword, role, cnpj, cpf, financialResponsible });
         yield user.save();
+        (0, logger_1.default)('info', `Usuário criado: ${user._id}`); // Adicionando log de criação de usuário
         res.status(201).send(user);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao criar usuário:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 });
@@ -44,20 +47,23 @@ const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const user = yield user_1.default.findById(req.params.id);
         if (!user) {
+            (0, logger_1.default)('error', `Usuário não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        updates.forEach((update) => __awaiter(void 0, void 0, void 0, function* () {
+        for (const update of updates) {
             if (update === 'password') {
                 user[update] = yield bcryptjs_1.default.hash(req.body[update], 10); // Criptografar a nova senha
             }
             else {
                 user[update] = req.body[update];
             }
-        }));
+        }
         yield user.save();
+        (0, logger_1.default)('info', `Usuário atualizado: ${user._id}`); // Adicionando log de atualização de usuário
         res.send(user);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao atualizar usuário:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 });
@@ -67,11 +73,14 @@ const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const user = yield user_1.default.findByIdAndDelete(req.params.id);
         if (!user) {
+            (0, logger_1.default)('error', `Usuário não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+        (0, logger_1.default)('info', `Usuário deletado: ${user._id}`); // Adicionando log de exclusão de usuário
         res.send({ message: 'Usuário deletado com sucesso.' });
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao deletar usuário:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 });

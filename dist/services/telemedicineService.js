@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createVideoRoom = exports.generateVideoToken = void 0;
 const twilio_1 = __importDefault(require("twilio"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 // Configuração do Twilio
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -30,6 +31,7 @@ const generateVideoToken = (identity) => {
         room: 'DailyStandup',
     });
     token.addGrant(videoGrant);
+    (0, logger_1.default)('info', `Token de vídeo gerado para: ${identity}`); // Adicionando log de geração de token
     return token.toJwt();
 };
 exports.generateVideoToken = generateVideoToken;
@@ -40,9 +42,11 @@ const createVideoRoom = (roomName) => __awaiter(void 0, void 0, void 0, function
             uniqueName: roomName,
             type: 'group',
         });
+        (0, logger_1.default)('info', `Sala de vídeo criada: ${room.sid}`); // Adicionando log de criação de sala
         return room;
     }
     catch (error) {
+        (0, logger_1.default)('error', `Erro ao criar sala de vídeo: ${error.message}`); // Adicionando log de erro
         throw new Error(`Erro ao criar sala de vídeo: ${error.message}`);
     }
 });

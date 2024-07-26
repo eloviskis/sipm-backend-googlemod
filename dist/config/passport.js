@@ -18,11 +18,17 @@ const passport_facebook_1 = require("passport-facebook");
 const passport_linkedin_oauth2_1 = require("passport-linkedin-oauth2");
 const user_1 = __importDefault(require("../models/user"));
 passport_1.default.serializeUser((user, done) => {
-    done(null, user);
+    done(null, user.id);
 });
-passport_1.default.deserializeUser((obj, done) => {
-    done(null, obj);
-});
+passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield user_1.default.findById(id);
+        done(null, user);
+    }
+    catch (error) {
+        done(error, null);
+    }
+}));
 // Configuração do Google Strategy
 passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientID: process.env.GOOGLE_CLIENT_ID,

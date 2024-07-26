@@ -38,6 +38,17 @@ const appointmentSchema = new mongoose_1.Schema({
         ref: 'User',
         required: true,
     },
+    status: {
+        type: String,
+        enum: ['scheduled', 'completed', 'cancelled'],
+        default: 'scheduled',
+        required: true,
+    },
+    doctorId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
 }, {
     timestamps: true,
 });

@@ -38,10 +38,16 @@ const messageSchema = new mongoose_1.Schema({
     subject: {
         type: String,
         required: true,
+        trim: true,
     },
     content: {
         type: String,
         required: true,
+        trim: true,
+    },
+    read: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,

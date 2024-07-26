@@ -13,9 +13,9 @@ exports.integrateWithOutlookCalendar = exports.integrateWithGoogleCalendar = voi
 const microsoft_graph_client_1 = require("@microsoft/microsoft-graph-client");
 const azureTokenCredentials_1 = require("@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials");
 const msal_node_1 = require("@azure/msal-node");
-// Configuração do Google Calendar
 const googleapis_1 = require("googleapis");
 const google_auth_library_1 = require("google-auth-library");
+// Configuração do Google Calendar
 const oAuth2Client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
 oAuth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
@@ -31,14 +31,25 @@ const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, v
             timeZone: 'America/Sao_Paulo',
         },
         end: {
-            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(),
+            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(), // 30 minutos de duração
             timeZone: 'America/Sao_Paulo',
         },
     };
-    yield calendar.events.insert({
-        calendarId: 'primary',
-        requestBody: event,
-    });
+    try {
+        const response = yield calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: event,
+        });
+        console.info(`Evento criado no Google Calendar: ${response.data.htmlLink}`);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            console.error(`Erro ao criar evento no Google Calendar: ${error.message}`);
+        }
+        else {
+            console.error('Erro desconhecido ao criar evento no Google Calendar');
+        }
+    }
 });
 exports.integrateWithGoogleCalendar = integrateWithGoogleCalendar;
 // Configuração do Outlook Calendar
@@ -81,10 +92,21 @@ const integrateWithOutlookCalendar = (appointment) => __awaiter(void 0, void 0, 
             timeZone: 'America/Sao_Paulo',
         },
         end: {
-            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(),
+            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(), // 30 minutos de duração
             timeZone: 'America/Sao_Paulo',
         },
     };
-    yield client.api('/me/events').post(event);
+    try {
+        const response = yield client.api('/me/events').post(event);
+        console.info(`Evento criado no Outlook Calendar: ${response.id}`);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            console.error(`Erro ao criar evento no Outlook Calendar: ${error.message}`);
+        }
+        else {
+            console.error('Erro desconhecido ao criar evento no Outlook Calendar');
+        }
+    }
 });
 exports.integrateWithOutlookCalendar = integrateWithOutlookCalendar;

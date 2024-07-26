@@ -14,14 +14,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteClinic = exports.getClinic = exports.getClinics = exports.updateClinic = exports.createClinic = void 0;
 const clinic_1 = __importDefault(require("../models/clinic"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 // Criar uma nova clínica
 const createClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const clinic = new clinic_1.default(req.body);
         const savedClinic = yield clinic.save();
+        (0, logger_1.default)('info', `Clínica criada: ${savedClinic._id}`); // Adicionando log de criação de clínica
         res.status(201).send(savedClinic);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao criar clínica:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 });
@@ -37,6 +40,7 @@ const updateClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const clinic = yield clinic_1.default.findById(req.params.id);
         if (!clinic) {
+            (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
         updates.forEach((update) => {
@@ -45,9 +49,11 @@ const updateClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             }
         });
         yield clinic.save();
+        (0, logger_1.default)('info', `Clínica atualizada: ${clinic._id}`); // Adicionando log de atualização de clínica
         res.send(clinic);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao atualizar clínica:', error); // Adicionando log de erro
         res.status(400).send(error);
     }
 });
@@ -59,6 +65,7 @@ const getClinics = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.send(clinics);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao obter clínicas:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 });
@@ -68,11 +75,13 @@ const getClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const clinic = yield clinic_1.default.findById(req.params.id);
         if (!clinic) {
+            (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
         res.send(clinic);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao obter clínica:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 });
@@ -82,11 +91,14 @@ const deleteClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const clinic = yield clinic_1.default.findByIdAndDelete(req.params.id);
         if (!clinic) {
+            (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+        (0, logger_1.default)('info', `Clínica deletada: ${clinic._id}`); // Adicionando log de deleção de clínica
         res.send(clinic);
     }
     catch (error) {
+        (0, logger_1.default)('error', 'Erro ao deletar clínica:', error); // Adicionando log de erro
         res.status(500).send(error);
     }
 });

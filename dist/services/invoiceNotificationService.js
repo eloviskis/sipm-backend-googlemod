@@ -12,8 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAppointmentReminder = exports.sendAppointmentConfirmation = void 0;
+exports.sendInvoiceEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const path_1 = __importDefault(require("path"));
 // Configuração do Nodemailer
 const transporter = nodemailer_1.default.createTransport({
     service: 'Gmail',
@@ -22,37 +24,31 @@ const transporter = nodemailer_1.default.createTransport({
         pass: process.env.GMAIL_PASS,
     },
 });
-// Função para enviar confirmação de agendamento
-const sendAppointmentConfirmation = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
+// Função para enviar fatura por e-mail
+const sendInvoiceEmail = (email, invoicePath) => __awaiter(void 0, void 0, void 0, function* () {
     const mailOptions = {
         from: process.env.GMAIL_USER,
         to: email,
-        subject: 'Confirmação de Agendamento',
-        text: `Sua consulta foi agendada para ${date}.`,
+        subject: 'Sua Fatura',
+        text: 'Anexamos sua fatura em PDF.',
+        attachments: [
+            {
+                filename: path_1.default.basename(invoicePath),
+                path: invoicePath,
+            },
+        ],
     };
     try {
         const info = yield transporter.sendMail(mailOptions);
-        console.log(`Email de confirmação enviado: ${info.response}`);
+        (0, logger_1.default)('info', `Fatura enviada: ${info.response}`);
     }
     catch (error) {
-        console.error(`Erro ao enviar email de confirmação: ${error.message}`);
+        if (error instanceof Error) {
+            (0, logger_1.default)('error', `Erro ao enviar fatura: ${error.message}`);
+        }
+        else {
+            (0, logger_1.default)('error', 'Erro desconhecido ao enviar fatura');
+        }
     }
 });
-exports.sendAppointmentConfirmation = sendAppointmentConfirmation;
-// Função para enviar lembrete de agendamento
-const sendAppointmentReminder = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
-    const mailOptions = {
-        from: process.env.GMAIL_USER,
-        to: email,
-        subject: 'Lembrete de Agendamento',
-        text: `Lembrete: Sua consulta está agendada para ${date}.`,
-    };
-    try {
-        const info = yield transporter.sendMail(mailOptions);
-        console.log(`Email de lembrete enviado: ${info.response}`);
-    }
-    catch (error) {
-        console.error(`Erro ao enviar email de lembrete: ${error.message}`);
-    }
-});
-exports.sendAppointmentReminder = sendAppointmentReminder;
+exports.sendInvoiceEmail = sendInvoiceEmail;

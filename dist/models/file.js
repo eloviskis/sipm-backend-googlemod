@@ -24,62 +24,30 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const clinicSchema = new mongoose_1.Schema({
-    name: {
+const fileSchema = new mongoose_1.Schema({
+    filename: {
         type: String,
         required: true,
     },
-    cnpj: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    financialResponsible: {
+    path: {
         type: String,
         required: true,
     },
-    customization: {
-        values: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-        reports: {
-            type: Map,
-            of: String,
-            required: false,
-        },
+    size: {
+        type: Number,
+        required: true,
     },
-    address: {
-        street: {
-            type: String,
-            required: true,
-        },
-        city: {
-            type: String,
-            required: true,
-        },
-        state: {
-            type: String,
-            required: true,
-        },
-        zipCode: {
-            type: String,
-            required: true,
-        },
+    mimetype: {
+        type: String,
+        required: true,
     },
-    contactInfo: {
-        phone: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
+    uploadedBy: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
     },
 }, {
     timestamps: true,
 });
-const Clinic = mongoose_1.default.model('Clinic', clinicSchema);
-exports.default = Clinic;
+const File = mongoose_1.default.model('File', fileSchema);
+exports.default = File;

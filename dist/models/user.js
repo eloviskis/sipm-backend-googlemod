@@ -88,6 +88,14 @@ const userSchema = new mongoose_1.Schema({
         type: themePreferencesSchema,
         required: false,
     },
+    mfaEnabled: {
+        type: Boolean,
+        default: false,
+    },
+    mfaSecret: {
+        type: String,
+        required: false,
+    },
 }, {
     timestamps: true,
 });

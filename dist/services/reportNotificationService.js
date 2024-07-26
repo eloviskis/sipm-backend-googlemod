@@ -12,8 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAppointmentReminder = exports.sendAppointmentConfirmation = void 0;
+exports.sendReportNotification = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 // Configuração do Nodemailer
 const transporter = nodemailer_1.default.createTransport({
     service: 'Gmail',
@@ -22,37 +23,25 @@ const transporter = nodemailer_1.default.createTransport({
         pass: process.env.GMAIL_PASS,
     },
 });
-// Função para enviar confirmação de agendamento
-const sendAppointmentConfirmation = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
+// Função para enviar notificação de novo relatório
+const sendReportNotification = (email, reportId) => __awaiter(void 0, void 0, void 0, function* () {
     const mailOptions = {
         from: process.env.GMAIL_USER,
         to: email,
-        subject: 'Confirmação de Agendamento',
-        text: `Sua consulta foi agendada para ${date}.`,
+        subject: 'Novo Relatório Gerado',
+        text: `Um novo relatório foi gerado. Você pode visualizá-lo no seguinte link: ${process.env.APP_URL}/reports/${reportId}`,
     };
     try {
         const info = yield transporter.sendMail(mailOptions);
-        console.log(`Email de confirmação enviado: ${info.response}`);
+        (0, logger_1.default)('info', `Notificação de relatório enviada: ${info.response}`, {}); // Adicionando argumento vazio para metadados
     }
     catch (error) {
-        console.error(`Erro ao enviar email de confirmação: ${error.message}`);
+        if (error instanceof Error) {
+            (0, logger_1.default)('error', `Erro ao enviar notificação de relatório: ${error.message}`, {}); // Adicionando argumento vazio para metadados
+        }
+        else {
+            (0, logger_1.default)('error', 'Erro desconhecido ao enviar notificação de relatório', {}); // Adicionando argumento vazio para metadados
+        }
     }
 });
-exports.sendAppointmentConfirmation = sendAppointmentConfirmation;
-// Função para enviar lembrete de agendamento
-const sendAppointmentReminder = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
-    const mailOptions = {
-        from: process.env.GMAIL_USER,
-        to: email,
-        subject: 'Lembrete de Agendamento',
-        text: `Lembrete: Sua consulta está agendada para ${date}.`,
-    };
-    try {
-        const info = yield transporter.sendMail(mailOptions);
-        console.log(`Email de lembrete enviado: ${info.response}`);
-    }
-    catch (error) {
-        console.error(`Erro ao enviar email de lembrete: ${error.message}`);
-    }
-});
-exports.sendAppointmentReminder = sendAppointmentReminder;
+exports.sendReportNotification = sendReportNotification;

@@ -28,24 +28,34 @@ const themeSchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
+        trim: true,
     },
     layout: {
         type: String,
         required: true,
+        trim: true,
     },
     colors: {
         primary: {
             type: String,
             required: true,
+            trim: true,
         },
         secondary: {
             type: String,
             required: true,
+            trim: true,
         },
         background: {
             type: String,
             required: true,
+            trim: true,
         },
+    },
+    createdBy: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
     },
 }, {
     timestamps: true,

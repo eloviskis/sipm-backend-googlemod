@@ -24,62 +24,27 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const clinicSchema = new mongoose_1.Schema({
-    name: {
+const notificationSchema = new mongoose_1.Schema({
+    title: {
         type: String,
         required: true,
     },
-    cnpj: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    financialResponsible: {
+    message: {
         type: String,
         required: true,
     },
-    customization: {
-        values: {
-            type: Map,
-            of: String,
-            required: false,
-        },
-        reports: {
-            type: Map,
-            of: String,
-            required: false,
-        },
+    recipient: {
+        type: String,
+        required: true,
     },
-    address: {
-        street: {
-            type: String,
-            required: true,
-        },
-        city: {
-            type: String,
-            required: true,
-        },
-        state: {
-            type: String,
-            required: true,
-        },
-        zipCode: {
-            type: String,
-            required: true,
-        },
+    read: {
+        type: Boolean,
+        default: false,
     },
-    contactInfo: {
-        phone: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
+    createdAt: {
+        type: Date,
+        default: Date.now,
     },
-}, {
-    timestamps: true,
 });
-const Clinic = mongoose_1.default.model('Clinic', clinicSchema);
-exports.default = Clinic;
+const Notification = mongoose_1.default.model('Notification', notificationSchema);
+exports.default = Notification;

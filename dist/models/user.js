@@ -99,6 +99,19 @@ const userSchema = new mongoose_1.Schema({
 }, {
     timestamps: true,
 });
+// Middleware para hash de senha antes de salvar
+userSchema.pre('save', function (next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const user = this;
+        if (!user.isModified('password')) {
+            return next();
+        }
+        const salt = yield bcryptjs_1.default.genSalt(10);
+        const hash = yield bcryptjs_1.default.hash(user.password, salt);
+        user.password = hash;
+        next();
+    });
+});
 userSchema.methods.isValidPassword = function (password) {
     return __awaiter(this, void 0, void 0, function* () {
         const user = this;

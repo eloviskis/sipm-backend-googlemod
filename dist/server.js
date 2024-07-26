@@ -14,8 +14,8 @@ const sslOptions = {
     key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.key')),
     cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.cert'))
 };
-https_1.default.createServer(sslOptions, app).listen(3000, () => {
-    console.log('Servidor HTTPS rodando na porta 3000');
+https_1.default.createServer(sslOptions, app).listen(3001, () => {
+    console.log('Servidor HTTPS rodando na porta 3001');
 });
 // Middlewares e rotas existentes...
 // Adicionar as rotas restantes...

@@ -12,22 +12,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
-const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sipm';
-    try {
-        yield mongoose_1.default.connect(mongoURI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true,
-            useFindAndModify: false,
-        });
-        (0, logger_1.default)('info', 'Conexão com o MongoDB estabelecida com sucesso');
-    }
-    catch (error) {
-        (0, logger_1.default)('error', 'Erro ao conectar ao MongoDB:', error);
-        process.exit(1);
-    }
+exports.updateHomePageContent = exports.getHomePageContent = void 0;
+const HomePageContent_1 = __importDefault(require("../models/HomePageContent"));
+const getHomePageContent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const content = yield HomePageContent_1.default.findOne();
+    res.json(content);
 });
-exports.default = connectDB;
+exports.getHomePageContent = getHomePageContent;
+const updateHomePageContent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const content = yield HomePageContent_1.default.findOneAndUpdate({}, req.body, { new: true, upsert: true });
+    res.json(content);
+});
+exports.updateHomePageContent = updateHomePageContent;

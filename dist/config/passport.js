@@ -31,8 +31,8 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
 }));
 // Configuração do Google Strategy
 passport_1.default.use(new passport_google_oauth20_1.Strategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientID: process.env.GOOGLE_CLIENT_ID || 'default_google_client_id',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'default_google_client_secret',
     callbackURL: '/auth/google/callback'
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -54,8 +54,8 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
 })));
 // Configuração do Facebook Strategy
 passport_1.default.use(new passport_facebook_1.Strategy({
-    clientID: process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.FACEBOOK_APP_SECRET,
+    clientID: process.env.FACEBOOK_APP_ID || 'default_facebook_app_id',
+    clientSecret: process.env.FACEBOOK_APP_SECRET || 'default_facebook_app_secret',
     callbackURL: '/auth/facebook/callback',
     profileFields: ['id', 'displayName', 'emails']
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
@@ -78,8 +78,8 @@ passport_1.default.use(new passport_facebook_1.Strategy({
 })));
 // Configuração do LinkedIn Strategy
 passport_1.default.use(new passport_linkedin_oauth2_1.Strategy({
-    clientID: process.env.LINKEDIN_KEY,
-    clientSecret: process.env.LINKEDIN_SECRET,
+    clientID: process.env.LINKEDIN_KEY || 'default_linkedin_key',
+    clientSecret: process.env.LINKEDIN_SECRET || 'default_linkedin_secret',
     callbackURL: '/auth/linkedin/callback',
     scope: ['r_emailaddress', 'r_liteprofile'],
 }, (token, tokenSecret, profile, done) => __awaiter(void 0, void 0, void 0, function* () {

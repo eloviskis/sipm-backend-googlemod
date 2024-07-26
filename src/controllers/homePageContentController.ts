@@ -1,5 +1,5 @@
-import HomePageContent from '../models/HomePageContent';
 import { Request, Response } from 'express';
+import HomePageContent from '../models/HomePageContent';
 
 export const getHomePageContent = async (req: Request, res: Response) => {
   const content = await HomePageContent.findOne();

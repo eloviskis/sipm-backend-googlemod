@@ -2,18 +2,18 @@ import Twilio from 'twilio';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
 // Configuração do Twilio
-const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID!;
-const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN!;
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID || 'default_twilio_account_sid';
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN || 'default_twilio_auth_token';
 const twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
 
-const videoServiceSid = process.env.TWILIO_VIDEO_SERVICE_SID!;
+const videoServiceSid = process.env.TWILIO_VIDEO_SERVICE_SID || 'default_twilio_video_service_sid';
 
 // Função para gerar token de vídeo
 export const generateVideoToken = (identity: string) => {
     const AccessToken = Twilio.jwt.AccessToken;
     const VideoGrant = AccessToken.VideoGrant;
 
-    const token = new AccessToken(twilioAccountSid, process.env.TWILIO_API_KEY!, process.env.TWILIO_API_SECRET!, {
+    const token = new AccessToken(twilioAccountSid, process.env.TWILIO_API_KEY || 'default_twilio_api_key', process.env.TWILIO_API_SECRET || 'default_twilio_api_secret', {
         identity: identity,
     });
 

@@ -4,15 +4,15 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-        user: process.env.GMAIL_USER!,
-        pass: process.env.GMAIL_PASS!,
+        user: process.env.GMAIL_USER || 'default_gmail_user',
+        pass: process.env.GMAIL_PASS || 'default_gmail_pass',
     },
 });
 
 // Função para enviar confirmação de agendamento
 export const sendAppointmentConfirmation = async (email: string, date: Date) => {
     const mailOptions = {
-        from: process.env.GMAIL_USER!,
+        from: process.env.GMAIL_USER || 'default_gmail_user',
         to: email,
         subject: 'Confirmação de Agendamento',
         text: `Sua consulta foi agendada para ${date}.`,
@@ -29,7 +29,7 @@ export const sendAppointmentConfirmation = async (email: string, date: Date) => 
 // Função para enviar lembrete de agendamento
 export const sendAppointmentReminder = async (email: string, date: Date) => {
     const mailOptions = {
-        from: process.env.GMAIL_USER!,
+        from: process.env.GMAIL_USER || 'default_gmail_user',
         to: email,
         subject: 'Lembrete de Agendamento',
         text: `Lembrete: Sua consulta está agendada para ${date}.`,

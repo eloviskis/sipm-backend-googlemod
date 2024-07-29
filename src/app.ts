@@ -21,6 +21,10 @@ import { ensureHttps } from './middlewares/httpsRedirect';
 import mfaMiddleware from './middlewares/mfaMiddleware'; // Adicionando middleware para MFA
 import logger from './middlewares/logger'; // Adicionando middleware de logger
 
+import fs from 'fs';
+import https from 'https';
+import path from 'path';
+
 const app = express();
 
 // Middleware para garantir HTTPS em produção
@@ -53,7 +57,9 @@ app.use(passport.session());
 // Middleware para autenticação multifator (MFA)
 app.use(mfaMiddleware);
 
+// Middleware para parsear JSON
 app.use(express.json());
+
 app.use('/api/auth', authRoutes); // Adicionando rotas de autenticação
 app.use(authMiddleware); // Adicionando o middleware de autenticação
 app.use('/api', userRoutes);
@@ -70,5 +76,20 @@ app.use('/api', whatsappRoutes); // Adicionando rotas de WhatsApp
 app.use('/api', themePreferencesRoutes); // Adicionando rotas de preferências de tema
 app.use('/api', paymentRoutes); // Adicionando rotas de pagamentos
 app.use(errorHandler);
+
+// Rota padrão
+app.get('/', (req, res) => {
+    res.send('Olá mundo HTTPS!');
+});
+
+// Configurar HTTPS com os certificados
+const sslOptions = {
+    key: fs.readFileSync(path.resolve(__dirname, '../certs/server.key')),
+    cert: fs.readFileSync(path.resolve(__dirname, '../certs/server.cert'))
+};  
+
+https.createServer(sslOptions, app).listen(3001, () => { // Altere a porta para 3001
+    console.log('Servidor HTTPS rodando na porta 3001');
+});
 
 export default app;

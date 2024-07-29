@@ -11,7 +11,7 @@ const appointmentRoutes_1 = __importDefault(require("./routes/appointmentRoutes"
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const clinicRoutes_1 = __importDefault(require("./routes/clinicRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
-const pageRoutes_1 = __importDefault(require("./routes/pageRoutes"));
+const pageRoutes_1 = __importDefault(require("./routes/pageRoutes")); // Certifique-se de que pageRoutes está importado corretamente
 const themeRoutes_1 = __importDefault(require("./routes/themeRoutes"));
 const patientRecordRoutes_1 = __importDefault(require("./routes/patientRecordRoutes"));
 const invoiceRoutes_1 = __importDefault(require("./routes/invoiceRoutes"));
@@ -29,6 +29,14 @@ const fs_1 = __importDefault(require("fs"));
 const https_1 = __importDefault(require("https"));
 const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
+// Configurar HTTPS com os certificados
+const sslOptions = {
+    key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.key')),
+    cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.cert'))
+};
+https_1.default.createServer(sslOptions, app).listen(3001, () => {
+    console.log('Servidor HTTPS rodando na porta 3001');
+});
 // Middleware para garantir HTTPS em produção
 if (process.env.NODE_ENV === 'production') {
     app.use(httpsRedirect_1.ensureHttps);
@@ -38,6 +46,8 @@ app.use((req, res, next) => {
     (0, logger_1.default)("info", "Request logged", { method: req.method, url: req.url });
     next();
 });
+// Middleware para parsear JSON
+app.use(express_1.default.json());
 // Configuração da sessão
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'default_secret',
@@ -54,8 +64,7 @@ app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 // Middleware para autenticação multifator (MFA)
 app.use(mfaMiddleware_1.default);
-// Middleware para parsear JSON
-app.use(express_1.default.json());
+// Adicionando rotas
 app.use('/api/auth', authRoutes_1.default); // Adicionando rotas de autenticação
 app.use(authMiddleware_1.authMiddleware); // Adicionando o middleware de autenticação
 app.use('/api', userRoutes_1.default);
@@ -75,13 +84,5 @@ app.use(errorHandler_1.errorHandler);
 // Rota padrão
 app.get('/', (req, res) => {
     res.send('Olá mundo HTTPS!');
-});
-// Configurar HTTPS com os certificados
-const sslOptions = {
-    key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.key')),
-    cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.cert'))
-};
-https_1.default.createServer(sslOptions, app).listen(3001, () => {
-    console.log('Servidor HTTPS rodando na porta 3001');
 });
 exports.default = app;

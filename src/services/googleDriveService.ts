@@ -12,7 +12,7 @@ const authenticate = () => {
     oAuth2Client.setCredentials({
         refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
-    return google.drive({ version: 'v3', auth: oAuth2Client });
+    return google.drive({ version: 'v3', auth: oAuth2Client as any });
 };
 
 // Função para fazer upload de um arquivo

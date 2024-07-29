@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Appointment from '../models/appointment';
 import { sendAppointmentConfirmation, sendAppointmentReminder } from '../services/notificationService';
-import { integrateWithGoogleCalendar, integrateWithOutlookCalendar } from '../services/calendarIntegrationService';
+import { integrateWithGoogleCalendar } from '../services/calendarIntegrationService';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
 // Função para criar um novo agendamento
@@ -15,7 +15,7 @@ export const createAppointment = async (req: Request, res: Response) => {
 
         // Integração com Google Calendar e Outlook Calendar
         await integrateWithGoogleCalendar(appointment);
-        await integrateWithOutlookCalendar(appointment);
+        await integrateWithGoogleCalendar(appointment);
 
         logger('info', `Agendamento criado: ${appointment._id}`); // Adicionando log de criação de agendamento
         res.status(201).send(appointment);

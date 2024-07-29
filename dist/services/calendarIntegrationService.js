@@ -9,10 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.integrateWithOutlookCalendar = exports.integrateWithGoogleCalendar = void 0;
-const microsoft_graph_client_1 = require("@microsoft/microsoft-graph-client");
-const azureTokenCredentials_1 = require("@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials");
-const msal_node_1 = require("@azure/msal-node");
+exports.integrateWithGoogleCalendar = void 0;
 const googleapis_1 = require("googleapis");
 const google_auth_library_1 = require("google-auth-library");
 // Configuração do Google Calendar
@@ -22,7 +19,7 @@ oAuth2Client.setCredentials({
 });
 // Função para integrar com Google Calendar
 const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, void 0, function* () {
-    const calendar = googleapis_1.google.calendar({ version: 'v3', auth: oAuth2Client });
+    const calendar = googleapis_1.google.calendar('v3');
     const event = {
         summary: 'Consulta Médica',
         description: 'Descrição da consulta',
@@ -40,7 +37,12 @@ const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, v
             calendarId: 'primary',
             requestBody: event,
         });
-        console.info(`Evento criado no Google Calendar: ${response.data.htmlLink}`);
+        if (response && response.data) {
+            console.info(`Evento criado no Google Calendar: ${response.data.htmlLink}`);
+        }
+        else {
+            console.error('Resposta inesperada ao criar evento no Google Calendar.');
+        }
     }
     catch (error) {
         if (error instanceof Error) {
@@ -52,61 +54,3 @@ const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, v
     }
 });
 exports.integrateWithGoogleCalendar = integrateWithGoogleCalendar;
-// Configuração do Outlook Calendar
-const msalConfig = {
-    auth: {
-        clientId: process.env.OUTLOOK_CLIENT_ID,
-        authority: process.env.OUTLOOK_AUTHORITY,
-        clientSecret: process.env.OUTLOOK_CLIENT_SECRET,
-    },
-};
-const cca = new msal_node_1.ConfidentialClientApplication(msalConfig);
-class CustomTokenCredential {
-    constructor(cca) {
-        this.cca = cca;
-    }
-    getToken(scopes) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield this.cca.acquireTokenByClientCredential({
-                scopes: scopes,
-            });
-            return (result === null || result === void 0 ? void 0 : result.accessToken) ? { token: result.accessToken, expiresOnTimestamp: 0 } : null;
-        });
-    }
-}
-const customTokenCredential = new CustomTokenCredential(cca);
-const authProvider = new azureTokenCredentials_1.TokenCredentialAuthenticationProvider(customTokenCredential, {
-    scopes: ['https://graph.microsoft.com/.default'],
-});
-// Função para integrar com Outlook Calendar
-const integrateWithOutlookCalendar = (appointment) => __awaiter(void 0, void 0, void 0, function* () {
-    const client = microsoft_graph_client_1.Client.initWithMiddleware({ authProvider });
-    const event = {
-        subject: 'Consulta Médica',
-        body: {
-            contentType: 'HTML',
-            content: 'Descrição da consulta',
-        },
-        start: {
-            dateTime: appointment.date,
-            timeZone: 'America/Sao_Paulo',
-        },
-        end: {
-            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(),
-            timeZone: 'America/Sao_Paulo',
-        },
-    };
-    try {
-        const response = yield client.api('/me/events').post(event);
-        console.info(`Evento criado no Outlook Calendar: ${response.id}`);
-    }
-    catch (error) {
-        if (error instanceof Error) {
-            console.error(`Erro ao criar evento no Outlook Calendar: ${error.message}`);
-        }
-        else {
-            console.error('Erro desconhecido ao criar evento no Outlook Calendar');
-        }
-    }
-});
-exports.integrateWithOutlookCalendar = integrateWithOutlookCalendar;

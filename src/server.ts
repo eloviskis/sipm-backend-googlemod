@@ -11,7 +11,7 @@ const app = express();
 const sslOptions = {
     key: fs.readFileSync(path.resolve(__dirname, '../certs/server.key')),
     cert: fs.readFileSync(path.resolve(__dirname, '../certs/server.cert'))
-};
+};  
 
 https.createServer(sslOptions, app).listen(3001, () => { // Altere a porta para 3001
     console.log('Servidor HTTPS rodando na porta 3001');

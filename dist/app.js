@@ -25,6 +25,9 @@ const authMiddleware_1 = require("./middlewares/authMiddleware");
 const httpsRedirect_1 = require("./middlewares/httpsRedirect");
 const mfaMiddleware_1 = __importDefault(require("./middlewares/mfaMiddleware")); // Adicionando middleware para MFA
 const logger_1 = __importDefault(require("./middlewares/logger")); // Adicionando middleware de logger
+const fs_1 = __importDefault(require("fs"));
+const https_1 = __importDefault(require("https"));
+const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 // Middleware para garantir HTTPS em produção
 if (process.env.NODE_ENV === 'production') {
@@ -37,12 +40,12 @@ app.use((req, res, next) => {
 });
 // Configuração da sessão
 app.use((0, express_session_1.default)({
-    secret: process.env.SESSION_SECRET || 'default_secret', // Use uma variável de ambiente para a chave secreta
+    secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
     }
 }));
@@ -51,6 +54,7 @@ app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 // Middleware para autenticação multifator (MFA)
 app.use(mfaMiddleware_1.default);
+// Middleware para parsear JSON
 app.use(express_1.default.json());
 app.use('/api/auth', authRoutes_1.default); // Adicionando rotas de autenticação
 app.use(authMiddleware_1.authMiddleware); // Adicionando o middleware de autenticação
@@ -68,4 +72,16 @@ app.use('/api', whatsappRoutes_1.default); // Adicionando rotas de WhatsApp
 app.use('/api', themePreferencesRoutes_1.default); // Adicionando rotas de preferências de tema
 app.use('/api', paymentRoutes_1.default); // Adicionando rotas de pagamentos
 app.use(errorHandler_1.errorHandler);
+// Rota padrão
+app.get('/', (req, res) => {
+    res.send('Olá mundo HTTPS!');
+});
+// Configurar HTTPS com os certificados
+const sslOptions = {
+    key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.key')),
+    cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.cert'))
+};
+https_1.default.createServer(sslOptions, app).listen(3001, () => {
+    console.log('Servidor HTTPS rodando na porta 3001');
+});
 exports.default = app;

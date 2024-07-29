@@ -31,7 +31,7 @@ const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, v
             timeZone: 'America/Sao_Paulo',
         },
         end: {
-            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(), // 30 minutos de duração
+            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(),
             timeZone: 'America/Sao_Paulo',
         },
     };
@@ -92,7 +92,7 @@ const integrateWithOutlookCalendar = (appointment) => __awaiter(void 0, void 0, 
             timeZone: 'America/Sao_Paulo',
         },
         end: {
-            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(), // 30 minutos de duração
+            dateTime: new Date(new Date(appointment.date).getTime() + 30 * 60 * 1000).toISOString(),
             timeZone: 'America/Sao_Paulo',
         },
     };

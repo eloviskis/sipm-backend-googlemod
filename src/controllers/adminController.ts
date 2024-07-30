@@ -82,7 +82,7 @@ export const removePermission = async (req: Request, res: Response) => {
             return res.status(404).send({ error: 'User not found.' });
         }
 
-        user.permissions = user.permissions.filter((perm) => perm !== permission);
+        user.permissions = user.permissions.filter((perm: string) => perm !== permission);
         await user.save();
         logger('info', `Permissão ${permission} removida do usuário ${user.email}`);
         res.status(200).send({ message: 'Permission removed successfully.', user });

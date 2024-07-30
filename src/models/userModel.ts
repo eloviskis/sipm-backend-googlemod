@@ -18,4 +18,5 @@ const UserSchema: Schema = new Schema({
   resetPasswordExpires: { type: Number },
 });
 
-export default mongoose.model<IUser>('User', UserSchema);
+// Verificar se o modelo já foi definido para evitar sobrescrever
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

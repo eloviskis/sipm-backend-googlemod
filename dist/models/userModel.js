@@ -32,4 +32,5 @@ const UserSchema = new mongoose_1.Schema({
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Number },
 });
-exports.default = mongoose_1.default.model('User', UserSchema);
+// Verificar se o modelo já foi definido para evitar sobrescrever
+exports.default = mongoose_1.default.models.User || mongoose_1.default.model('User', UserSchema);

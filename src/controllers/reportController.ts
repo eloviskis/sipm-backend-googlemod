@@ -2,12 +2,10 @@ import { Request, Response } from 'express';
 import Report, { IReport } from '../models/report';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 import { sendReportNotification } from '../services/reportNotificationService'; // Adicionando serviço de notificação
+import { IUser } from '../models/user';
 
 interface AuthRequest extends Request {
-    user?: {
-        email?: string;
-        [key: string]: any;
-    };
+    user?: IUser;
 }
 
 // Função para criar um novo relatório

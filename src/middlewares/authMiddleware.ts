@@ -1,30 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import User from '../models/user';
+import passport from 'passport';
+import { IUser } from '../models/user'; // Usando a interface IUser exportada
 
-interface AuthRequest extends Request {
-    user?: any;
-    token?: string;
+declare global {
+    namespace Express {
+        interface User extends IUser {
+            _id: string;
+        }
+    }
 }
 
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) {
-            throw new Error('Token de autenticação não fornecido');
-        }
+interface AuthenticatedRequest extends Request {
+    user?: Express.User;
+}
 
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-        const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });
-
-        if (!user) {
-            throw new Error('Usuário não encontrado');
+export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    passport.authenticate('jwt', { session: false }, (err: Error | null, user: Express.User | false, info: any) => {
+        if (err || !user) {
+            return res.status(401).json({ message: 'Unauthorized' });
         }
 
         req.user = user;
-        req.token = token;
         next();
-    } catch (error) {
-        res.status(401).send({ error: 'Por favor, autentique-se' });
-    }
+    })(req, res, next);
 };

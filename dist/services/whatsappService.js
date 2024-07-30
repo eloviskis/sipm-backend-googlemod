@@ -13,12 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendWhatsAppMessage = void 0;
-const twilio_1 = __importDefault(require("twilio"));
+const twilio_1 = require("twilio");
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM;
-const client = new twilio_1.default(accountSid, authToken);
+const client = new twilio_1.Twilio(accountSid, authToken);
 const sendWhatsAppMessage = (to, message) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield client.messages.create({

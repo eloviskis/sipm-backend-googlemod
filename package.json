@@ -26,6 +26,7 @@
     "express-validator": "^6.6.1",
     "google-auth-library": "^6.1.6",
     "googleapis": "^140.0.1",
+    "http2": "^3.3.6",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^5.11.15",
     "morgan": "^1.10.0",

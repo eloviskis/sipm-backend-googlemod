@@ -12,8 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNotificationStats = exports.getSettingsStats = exports.getReportStats = exports.getUserStats = void 0;
+exports.removePermission = exports.addPermission = exports.getNotificationStats = exports.getSettingsStats = exports.getReportStats = exports.getUserStats = void 0;
 const logger_1 = __importDefault(require("../middlewares/logger"));
+const userModel_1 = __importDefault(require("../models/userModel")); // Importar o modelo de Usuário
+// Função para obter estatísticas de usuários
 const getUserStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const stats = { count: 100 }; // Simular um retorno de 100 usuários cadastrados
@@ -26,6 +28,7 @@ const getUserStats = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getUserStats = getUserStats;
+// Função para obter estatísticas de relatórios
 const getReportStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const stats = { count: 50 }; // Simular um retorno de 50 relatórios gerados
@@ -38,6 +41,7 @@ const getReportStats = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.getReportStats = getReportStats;
+// Função para obter estatísticas de configurações
 const getSettingsStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const stats = { count: 20 }; // Simular um retorno de 20 configurações
@@ -50,6 +54,7 @@ const getSettingsStats = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getSettingsStats = getSettingsStats;
+// Função para obter estatísticas de notificações
 const getNotificationStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const stats = { count: 200 }; // Simular um retorno de 200 notificações enviadas
@@ -62,3 +67,43 @@ const getNotificationStats = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getNotificationStats = getNotificationStats;
+// Função para adicionar permissão a um usuário
+const addPermission = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { permission } = req.body;
+    try {
+        const user = yield userModel_1.default.findById(id);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found.' });
+        }
+        user.permissions.push(permission);
+        yield user.save();
+        (0, logger_1.default)('info', `Permissão ${permission} adicionada ao usuário ${user.email}`);
+        res.status(200).send({ message: 'Permission added successfully.', user });
+    }
+    catch (error) {
+        (0, logger_1.default)('error', 'Erro ao adicionar permissão:', error);
+        res.status(500).send({ error: 'Erro ao adicionar permissão.' });
+    }
+});
+exports.addPermission = addPermission;
+// Função para remover permissão de um usuário
+const removePermission = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { permission } = req.body;
+    try {
+        const user = yield userModel_1.default.findById(id);
+        if (!user) {
+            return res.status(404).send({ error: 'User not found.' });
+        }
+        user.permissions = user.permissions.filter((perm) => perm !== permission);
+        yield user.save();
+        (0, logger_1.default)('info', `Permissão ${permission} removida do usuário ${user.email}`);
+        res.status(200).send({ message: 'Permission removed successfully.', user });
+    }
+    catch (error) {
+        (0, logger_1.default)('error', 'Erro ao remover permissão:', error);
+        res.status(500).send({ error: 'Erro ao remover permissão.' });
+    }
+});
+exports.removePermission = removePermission;

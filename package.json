@@ -16,6 +16,7 @@
     "@azure/core-auth": "^1.7.2",
     "@azure/msal-node": "^2.12.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@types/twilio": "^3.19.2",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",

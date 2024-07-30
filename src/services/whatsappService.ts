@@ -1,4 +1,4 @@
-import { Twilio } from 'twilio';
+import Twilio from 'twilio';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID!;

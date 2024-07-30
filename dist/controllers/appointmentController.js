@@ -26,7 +26,6 @@ const createAppointment = (req, res) => __awaiter(void 0, void 0, void 0, functi
         yield (0, notificationService_1.sendAppointmentConfirmation)(req.body.email, req.body.date);
         // Integração com Google Calendar e Outlook Calendar
         yield (0, calendarIntegrationService_1.integrateWithGoogleCalendar)(appointment);
-        yield (0, calendarIntegrationService_1.integrateWithOutlookCalendar)(appointment);
         (0, logger_1.default)('info', `Agendamento criado: ${appointment._id}`); // Adicionando log de criação de agendamento
         res.status(201).send(appointment);
     }

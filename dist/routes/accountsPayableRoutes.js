@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const accountsPayableController_1 = require("../controllers/accountsPayableController");
+const router = (0, express_1.Router)();
+router.post('/accounts-payable', accountsPayableController_1.createAccountPayable);
+router.get('/accounts-payable', accountsPayableController_1.getAccountsPayable);
+router.get('/accounts-payable/:id', accountsPayableController_1.getAccountPayable);
+router.patch('/accounts-payable/:id', accountsPayableController_1.updateAccountPayable);
+router.delete('/accounts-payable/:id', accountsPayableController_1.deleteAccountPayable);
+exports.default = router;

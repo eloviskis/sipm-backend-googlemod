@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
-import User from '../models/user';
+import User, { IUser } from '../models/user';
 
 passport.serializeUser((user: any, done) => {
     done(null, user.id);
@@ -11,7 +11,7 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id: string, done) => {
     try {
         const user = await User.findById(id);
-        done(null, user);
+        done(null, user as IUser | null);
     } catch (error) {
         done(error, null);
     }
@@ -32,7 +32,7 @@ passport.use(new GoogleStrategy({
                     email: profile.emails[0].value,
                     password: '',
                     role: 'USER',
-                });
+                } as IUser);
                 await user.save();
             }
             return done(null, user);
@@ -58,7 +58,7 @@ passport.use(new FacebookStrategy({
                     email: profile.emails[0].value,
                     password: '',
                     role: 'USER',
-                });
+                } as IUser);
                 await user.save();
             }
             return done(null, user);
@@ -84,7 +84,7 @@ passport.use(new LinkedInStrategy({
                     email: profile.emails[0].value,
                     password: '',
                     role: 'USER',
-                });
+                } as IUser);
                 await user.save();
             }
             return done(null, user);

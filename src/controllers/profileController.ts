@@ -1,13 +1,9 @@
 import { Request, Response } from 'express';
-import User from '../models/user';
+import User, { IUser } from '../models/user';
 import logger from '../middlewares/logger';
 
 interface AuthenticatedRequest extends Request {
-    user?: {
-        _id: string;
-        name: string;
-        email: string;
-    };
+    user?: IUser;
 }
 
 // Função para obter o perfil do usuário

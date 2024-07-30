@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
 import Message, { IMessage } from '../models/message';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+import { IUser } from '../models/user'; // Assegurando que IUser seja importado
 
 // Interface estendida para incluir user no Request
 interface AuthRequest extends Request {
-    user?: {
-        _id: string;
-    };
+    user?: IUser;
 }
 
 // Função para enviar uma mensagem

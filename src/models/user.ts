@@ -84,6 +84,7 @@ userSchema.methods.isValidPassword = async function (password: string) {
 };
 
 export interface IUser extends Document, BaseSchema {
+    _id: string;
     name: string;
     email: string;
     password: string;

@@ -23,6 +23,8 @@ import { authMiddleware } from './middlewares/authMiddleware';
 import { ensureHttps } from './middlewares/httpsRedirect';
 import mfaMiddleware from './middlewares/mfaMiddleware';
 import logger from './middlewares/logger';
+import accountsReceivableRoutes from './routes/accountsReceivableRoutes';
+import accountsPayableRoutes from './routes/accountsPayableRoutes';
 
 import fs from 'fs';
 import https from 'https';
@@ -84,6 +86,8 @@ app.use('/api', paymentRoutes);
 app.use('/api', documentTemplateRoutes); // Adicionar nova rota
 app.use('/api', preConsultationRoutes); // Adicionar nova rota
 app.use('/api', motivoRoutes); // Adicionar nova rota
+app.use('/api', accountsReceivableRoutes);
+app.use('/api', accountsPayableRoutes);
 app.use(errorHandler);
 
 app.get('/', (req, res) => {

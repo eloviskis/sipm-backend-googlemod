@@ -15,7 +15,6 @@ export const createAppointment = async (req: Request, res: Response) => {
 
         // Integração com Google Calendar e Outlook Calendar
         await integrateWithGoogleCalendar(appointment);
-        await integrateWithGoogleCalendar(appointment);
 
         logger('info', `Agendamento criado: ${appointment._id}`); // Adicionando log de criação de agendamento
         res.status(201).send(appointment);

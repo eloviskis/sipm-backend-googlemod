@@ -36,3 +36,4 @@ export const verifyMFA = (req: Request, res: Response) => {
         res.status(400).send('Código MFA inválido');
     }
 };
+    

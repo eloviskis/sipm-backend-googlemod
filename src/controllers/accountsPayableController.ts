@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
-import AccountsPayable from '../models/accountsPayable';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+
+const db = admin.firestore();
+const accountsPayableCollection = db.collection('accountsPayable');
 
 // Criar uma nova conta a pagar
 export const createAccountPayable = async (req: Request, res: Response) => {
     try {
-        const accountPayable = new AccountsPayable(req.body);
-        const savedAccount = await accountPayable.save();
+        const accountPayable = req.body;
+        const docRef = await accountsPayableCollection.add(accountPayable);
+        const savedAccount = await docRef.get();
 
-        logger('info', `Conta a pagar criada: ${savedAccount._id}`); // Adicionando log de criação
-        res.status(201).send(savedAccount);
+        logger('info', `Conta a pagar criada: ${docRef.id}`); // Adicionando log de criação
+        res.status(201).send({ id: docRef.id, ...savedAccount.data() });
     } catch (error) {
         logger('error', 'Erro ao criar conta a pagar:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -19,7 +23,8 @@ export const createAccountPayable = async (req: Request, res: Response) => {
 // Obter todas as contas a pagar
 export const getAccountsPayable = async (req: Request, res: Response) => {
     try {
-        const accountsPayable = await AccountsPayable.find({});
+        const snapshot = await accountsPayableCollection.get();
+        const accountsPayable = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(accountsPayable);
     } catch (error) {
         logger('error', 'Erro ao obter contas a pagar:', error); // Adicionando log de erro
@@ -30,12 +35,12 @@ export const getAccountsPayable = async (req: Request, res: Response) => {
 // Obter uma conta a pagar específica
 export const getAccountPayable = async (req: Request, res: Response) => {
     try {
-        const accountPayable = await AccountsPayable.findById(req.params.id);
-        if (!accountPayable) {
+        const doc = await accountsPayableCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(accountPayable);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter conta a pagar:', error); // Adicionando log de erro
         res.status(500).send(error);
@@ -53,16 +58,19 @@ export const updateAccountPayable = async (req: Request, res: Response) => {
     }
 
     try {
-        const accountPayable: any = await AccountsPayable.findById(req.params.id);
-        if (!accountPayable) {
+        const docRef = accountsPayableCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        updates.forEach((update) => (accountPayable[update as keyof typeof accountPayable] = req.body[update]));
-        await accountPayable.save();
 
-        logger('info', `Conta a pagar atualizada: ${accountPayable._id}`); // Adicionando log de atualização
-        res.send(accountPayable);
+        const accountPayable = doc.data();
+        updates.forEach((update) => (accountPayable![update as keyof typeof accountPayable] = req.body[update]));
+        await docRef.update(accountPayable!);
+
+        logger('info', `Conta a pagar atualizada: ${docRef.id}`); // Adicionando log de atualização
+        res.send({ id: docRef.id, ...accountPayable });
     } catch (error) {
         logger('error', 'Erro ao atualizar conta a pagar:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -72,13 +80,15 @@ export const updateAccountPayable = async (req: Request, res: Response) => {
 // Deletar uma conta a pagar
 export const deleteAccountPayable = async (req: Request, res: Response) => {
     try {
-        const accountPayable = await AccountsPayable.findByIdAndDelete(req.params.id);
-        if (!accountPayable) {
+        const docRef = accountsPayableCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        logger('info', `Conta a pagar deletada: ${accountPayable._id}`); // Adicionando log de deleção
-        res.send(accountPayable);
+        await docRef.delete();
+        logger('info', `Conta a pagar deletada: ${req.params.id}`); // Adicionando log de deleção
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar conta a pagar:', error); // Adicionando log de erro
         res.status(500).send(error);

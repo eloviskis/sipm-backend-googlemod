@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
-import AccountsReceivable from '../models/accountsReceivable'; // Update the path to the correct module
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+
+const db = admin.firestore();
+const accountsReceivableCollection = db.collection('accountsReceivable');
 
 // Criar uma nova conta a receber
 export const createAccountReceivable = async (req: Request, res: Response) => {
     try {
-        const accountReceivable = new AccountsReceivable(req.body);
-        const savedAccount = await accountReceivable.save();
+        const accountReceivable = req.body;
+        const docRef = await accountsReceivableCollection.add(accountReceivable);
+        const savedAccount = await docRef.get();
 
-        logger('info', `Conta a receber criada: ${savedAccount._id}`); // Adicionando log de criação
-        res.status(201).send(savedAccount);
+        logger('info', `Conta a receber criada: ${docRef.id}`); // Adicionando log de criação
+        res.status(201).send({ id: docRef.id, ...savedAccount.data() });
     } catch (error) {
         logger('error', 'Erro ao criar conta a receber:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -19,7 +23,8 @@ export const createAccountReceivable = async (req: Request, res: Response) => {
 // Obter todas as contas a receber
 export const getAccountsReceivable = async (req: Request, res: Response) => {
     try {
-        const accountsReceivable = await AccountsReceivable.find({});
+        const snapshot = await accountsReceivableCollection.get();
+        const accountsReceivable = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(accountsReceivable);
     } catch (error) {
         logger('error', 'Erro ao obter contas a receber:', error); // Adicionando log de erro
@@ -30,12 +35,12 @@ export const getAccountsReceivable = async (req: Request, res: Response) => {
 // Obter uma conta a receber específica
 export const getAccountReceivable = async (req: Request, res: Response) => {
     try {
-        const accountReceivable = await AccountsReceivable.findById(req.params.id);
-        if (!accountReceivable) {
+        const doc = await accountsReceivableCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(accountReceivable);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter conta a receber:', error); // Adicionando log de erro
         res.status(500).send(error);
@@ -53,16 +58,19 @@ export const updateAccountReceivable = async (req: Request, res: Response) => {
     }
 
     try {
-        const accountReceivable: any = await AccountsReceivable.findById(req.params.id);
-        if (!accountReceivable) {
+        const docRef = accountsReceivableCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        updates.forEach((update) => (accountReceivable[update as keyof typeof accountReceivable] = req.body[update]));
-        await accountReceivable.save();
 
-        logger('info', `Conta a receber atualizada: ${accountReceivable._id}`); // Adicionando log de atualização
-        res.send(accountReceivable);
+        const accountReceivable = doc.data();
+        updates.forEach((update) => (accountReceivable![update as keyof typeof accountReceivable] = req.body[update]));
+        await docRef.update(accountReceivable!);
+
+        logger('info', `Conta a receber atualizada: ${docRef.id}`); // Adicionando log de atualização
+        res.send({ id: docRef.id, ...accountReceivable });
     } catch (error) {
         logger('error', 'Erro ao atualizar conta a receber:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -72,13 +80,15 @@ export const updateAccountReceivable = async (req: Request, res: Response) => {
 // Deletar uma conta a receber
 export const deleteAccountReceivable = async (req: Request, res: Response) => {
     try {
-        const accountReceivable = await AccountsReceivable.findByIdAndDelete(req.params.id);
-        if (!accountReceivable) {
+        const docRef = accountsReceivableCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        logger('info', `Conta a receber deletada: ${accountReceivable._id}`); // Adicionando log de deleção
-        res.send(accountReceivable);
+        await docRef.delete();
+        logger('info', `Conta a receber deletada: ${req.params.id}`); // Adicionando log de deleção
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar conta a receber:', error); // Adicionando log de erro
         res.status(500).send(error);

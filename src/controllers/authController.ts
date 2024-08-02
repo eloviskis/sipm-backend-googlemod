@@ -1,32 +1,32 @@
 import { Request, Response } from 'express';
-import User from '../models/userModel';
-import nodemailer from 'nodemailer';
+import admin from 'firebase-admin';
+import sgMail from '@sendgrid/mail';
 import crypto from 'crypto';
+import logger from '../middlewares/logger';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+const db = admin.firestore();
+const usersCollection = db.collection('users');
 
 export const forgotPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    const snapshot = await usersCollection.where('email', '==', email).get();
+    if (snapshot.empty) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
+    const userDoc = snapshot.docs[0];
     const token = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
-    await user.save();
+    const resetPasswordToken = token;
+    const resetPasswordExpires = Date.now() + 3600000; // 1 hora
+
+    await userDoc.ref.update({ resetPasswordToken, resetPasswordExpires });
 
     const mailOptions = {
-      to: user.email,
+      to: email,
       from: process.env.EMAIL_USER,
       subject: 'Redefinição de senha',
       text: `Você está recebendo este e-mail porque você (ou alguém) solicitou a redefinição da senha da sua conta.\n\n` +
@@ -35,15 +35,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
             `Se você não solicitou isso, por favor, ignore este e-mail e sua senha permanecerá inalterada.\n`,
     };
 
-    transporter.sendMail(mailOptions, (err, response) => {
-      if (err) {
-        console.error('Erro ao enviar e-mail:', err);
-        return res.status(500).json({ message: 'Erro ao enviar e-mail' });
-      }
-      res.status(200).json({ message: 'E-mail de redefinição de senha enviado com sucesso' });
-    });
+    await sgMail.send(mailOptions);
+    logger('info', `E-mail de redefinição de senha enviado para: ${email}`);
+    res.status(200).json({ message: 'E-mail de redefinição de senha enviado com sucesso' });
   } catch (error) {
-    console.error('Erro ao processar solicitação de redefinição de senha:', error);
+    logger('error', 'Erro ao processar solicitação de redefinição de senha:', error);
     res.status(500).json({ message: 'Erro ao processar solicitação de redefinição de senha' });
   }
 };

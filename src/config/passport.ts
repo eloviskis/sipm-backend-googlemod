@@ -1,97 +1,93 @@
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as FacebookStrategy } from 'passport-facebook';
-import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
+import admin from 'firebase-admin';
+import firebase from 'firebase/app';
+import 'firebase/auth';
 import User, { IUser } from '../models/user';
+import logger from '../middlewares/logger';
 
-passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+// Inicializar Firebase Admin SDK
+const serviceAccount = require('./serviceAccountKey.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
 });
 
-passport.deserializeUser(async (id: string, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user as IUser | null);
-    } catch (error) {
-        done(error, null);
-    }
+firebase.initializeApp({
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
 });
 
-// Configuração do Google Strategy
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || 'default_google_client_id',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'default_google_client_secret',
-    callbackURL: '/auth/google/callback'
-},
-    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
-        try {
-            let user = await User.findOne({ email: profile.emails[0].value });
-            if (!user) {
-                user = new User({
-                    name: profile.displayName,
-                    email: profile.emails[0].value,
-                    password: '',
-                    role: 'USER',
-                } as IUser);
-                await user.save();
-            }
-            return done(null, user);
-        } catch (error) {
-            return done(error, false);
-        }
-    }
-));
+// Serializar e desserializar usuário
+export const serializeUser = (user: any, done: any) => {
+  done(null, user.uid);
+};
 
-// Configuração do Facebook Strategy
-passport.use(new FacebookStrategy({
-    clientID: process.env.FACEBOOK_APP_ID || 'default_facebook_app_id',
-    clientSecret: process.env.FACEBOOK_APP_SECRET || 'default_facebook_app_secret',
-    callbackURL: '/auth/facebook/callback',
-    profileFields: ['id', 'displayName', 'emails']
-},
-    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
-        try {
-            let user = await User.findOne({ email: profile.emails[0].value });
-            if (!user) {
-                user = new User({
-                    name: profile.displayName,
-                    email: profile.emails[0].value,
-                    password: '',
-                    role: 'USER',
-                } as IUser);
-                await user.save();
-            }
-            return done(null, user);
-        } catch (error) {
-            return done(error, false);
-        }
-    }
-));
+export const deserializeUser = async (uid: string, done: any) => {
+  try {
+    const userRecord = await admin.auth().getUser(uid);
+    const user = await User.findOne({ uid: userRecord.uid });
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+};
 
-// Configuração do LinkedIn Strategy
-passport.use(new LinkedInStrategy({
-    clientID: process.env.LINKEDIN_KEY || 'default_linkedin_key',
-    clientSecret: process.env.LINKEDIN_SECRET || 'default_linkedin_secret',
-    callbackURL: '/auth/linkedin/callback',
-    scope: ['r_emailaddress', 'r_liteprofile'],
-},
-    async (token: string, tokenSecret: string, profile: any, done: (error: any, user?: any) => void) => {
-        try {
-            let user = await User.findOne({ email: profile.emails[0].value });
-            if (!user) {
-                user = new User({
-                    name: profile.displayName,
-                    email: profile.emails[0].value,
-                    password: '',
-                    role: 'USER',
-                } as IUser);
-                await user.save();
-            }
-            return done(null, user);
-        } catch (error) {
-            return done(error, false);
-        }
-    }
-));
+// Função para verificar se o usuário existe e criar se não existir
+const findOrCreateUser = async (uid: string, email: string, displayName: string) => {
+  let user = await User.findOne({ email });
+  if (!user) {
+    user = new User({
+      uid,
+      name: displayName,
+      email,
+      password: '',
+      role: 'USER',
+    } as IUser);
+    await user.save();
+  }
+  return user;
+};
 
-export default passport;
+// Configuração do Google Auth Provider
+export const googleAuthProvider = async (token: string, done: any) => {
+  try {
+    const credential = firebase.auth.GoogleAuthProvider.credential(token);
+    const result = await firebase.auth().signInWithCredential(credential);
+    const user = await findOrCreateUser(result.user?.uid, result.user?.email!, result.user?.displayName!);
+    done(null, user);
+  } catch (error) {
+    done(error, false);
+  }
+};
+
+// Configuração do Facebook Auth Provider
+export const facebookAuthProvider = async (token: string, done: any) => {
+  try {
+    const credential = firebase.auth.FacebookAuthProvider.credential(token);
+    const result = await firebase.auth().signInWithCredential(credential);
+    const user = await findOrCreateUser(result.user?.uid, result.user?.email!, result.user?.displayName!);
+    done(null, user);
+  } catch (error) {
+    done(error, false);
+  }
+};
+
+// Configuração do LinkedIn Auth Provider (utilizando Firebase Auth custom token)
+export const linkedInAuthProvider = async (token: string, done: any) => {
+  try {
+    const userRecord = await admin.auth().verifyIdToken(token);
+    const user = await findOrCreateUser(userRecord.uid, userRecord.email!, userRecord.name!);
+    done(null, user);
+  } catch (error) {
+    done(error, false);
+  }
+};
+
+export default {
+  serializeUser,
+  deserializeUser,
+  googleAuthProvider,
+  facebookAuthProvider,
+  linkedInAuthProvider,
+};

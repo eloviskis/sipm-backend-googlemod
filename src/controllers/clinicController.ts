@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
-import Clinic, { IClinic } from '../models/clinic';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+
+const db = admin.firestore();
+const clinicsCollection = db.collection('clinics');
 
 // Criar uma nova clínica
 export const createClinic = async (req: Request, res: Response) => {
     try {
-        const clinic: IClinic = new Clinic(req.body);
-        const savedClinic = await clinic.save();
+        const clinic = req.body;
+        const docRef = await clinicsCollection.add(clinic);
+        const savedClinic = await docRef.get();
 
-        logger('info', `Clínica criada: ${savedClinic._id}`); // Adicionando log de criação de clínica
-        res.status(201).send(savedClinic);
+        logger('info', `Clínica criada: ${docRef.id}`); // Adicionando log de criação de clínica
+        res.status(201).send({ id: docRef.id, ...savedClinic.data() });
     } catch (error) {
         logger('error', 'Erro ao criar clínica:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -27,19 +31,23 @@ export const updateClinic = async (req: Request, res: Response) => {
     }
 
     try {
-        const clinic: IClinic | null = await Clinic.findById(req.params.id);
-        if (!clinic) {
+        const docRef = clinicsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+
+        const clinic = doc.data();
         updates.forEach((update) => {
-            if (update in clinic) {
+            if (clinic && update in clinic) {
                 (clinic as any)[update] = req.body[update];
             }
         });
-        await clinic.save();
-        logger('info', `Clínica atualizada: ${clinic._id}`); // Adicionando log de atualização de clínica
-        res.send(clinic);
+        await docRef.update(clinic!);
+
+        logger('info', `Clínica atualizada: ${docRef.id}`); // Adicionando log de atualização de clínica
+        res.send({ id: docRef.id, ...clinic });
     } catch (error) {
         logger('error', 'Erro ao atualizar clínica:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -49,7 +57,8 @@ export const updateClinic = async (req: Request, res: Response) => {
 // Obter todas as clínicas
 export const getClinics = async (req: Request, res: Response) => {
     try {
-        const clinics = await Clinic.find({});
+        const snapshot = await clinicsCollection.get();
+        const clinics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(clinics);
     } catch (error) {
         logger('error', 'Erro ao obter clínicas:', error); // Adicionando log de erro
@@ -60,12 +69,12 @@ export const getClinics = async (req: Request, res: Response) => {
 // Obter uma clínica específica
 export const getClinic = async (req: Request, res: Response) => {
     try {
-        const clinic = await Clinic.findById(req.params.id);
-        if (!clinic) {
+        const doc = await clinicsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(clinic);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter clínica:', error); // Adicionando log de erro
         res.status(500).send(error);
@@ -75,13 +84,16 @@ export const getClinic = async (req: Request, res: Response) => {
 // Deletar uma clínica
 export const deleteClinic = async (req: Request, res: Response) => {
     try {
-        const clinic = await Clinic.findByIdAndDelete(req.params.id);
-        if (!clinic) {
+        const docRef = clinicsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        logger('info', `Clínica deletada: ${clinic._id}`); // Adicionando log de deleção de clínica
-        res.send(clinic);
+        await docRef.delete();
+
+        logger('info', `Clínica deletada: ${docRef.id}`); // Adicionando log de deleção de clínica
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar clínica:', error); // Adicionando log de erro
         res.status(500).send(error);

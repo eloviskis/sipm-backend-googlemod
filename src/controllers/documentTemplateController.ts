@@ -1,14 +1,19 @@
 import { Request, Response } from 'express';
-import DocumentTemplate, { IDocumentTemplate } from '../models/documentTemplate';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger';
+
+const db = admin.firestore();
+const documentTemplatesCollection = db.collection('documentTemplates');
 
 // Criar um novo modelo de documento
 export const createDocumentTemplate = async (req: Request, res: Response) => {
     try {
-        const template = new DocumentTemplate(req.body);
-        await template.save();
-        logger('info', `Modelo de documento criado: ${template._id}`);
-        res.status(201).send(template);
+        const template = req.body;
+        const docRef = await documentTemplatesCollection.add(template);
+        const savedTemplate = await docRef.get();
+
+        logger('info', `Modelo de documento criado: ${docRef.id}`);
+        res.status(201).send({ id: docRef.id, ...savedTemplate.data() });
     } catch (error) {
         logger('error', 'Erro ao criar modelo de documento:', error);
         res.status(400).send(error);
@@ -18,7 +23,8 @@ export const createDocumentTemplate = async (req: Request, res: Response) => {
 // Obter todos os modelos de documentos
 export const getDocumentTemplates = async (req: Request, res: Response) => {
     try {
-        const templates = await DocumentTemplate.find({});
+        const snapshot = await documentTemplatesCollection.get();
+        const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(templates);
     } catch (error) {
         logger('error', 'Erro ao obter modelos de documentos:', error);
@@ -29,19 +35,19 @@ export const getDocumentTemplates = async (req: Request, res: Response) => {
 // Obter um modelo de documento específico
 export const getDocumentTemplate = async (req: Request, res: Response) => {
     try {
-        const template = await DocumentTemplate.findById(req.params.id);
-        if (!template) {
+        const doc = await documentTemplatesCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Modelo de documento não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        res.send(template);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter modelo de documento:', error);
         res.status(500).send(error);
     }
 };
 
-// Atualizar um modelo de documento específico (USANDO TYPE ASSERTION)
+// Atualizar um modelo de documento específico
 export const updateDocumentTemplate = async (req: Request, res: Response) => {
     const updates = Object.keys(req.body);
     const allowedUpdates = ['name', 'content'];
@@ -52,17 +58,23 @@ export const updateDocumentTemplate = async (req: Request, res: Response) => {
     }
 
     try {
-        const template: IDocumentTemplate | null = await DocumentTemplate.findById(req.params.id);
-        if (!template) {
+        const docRef = documentTemplatesCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Modelo de documento não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
+
+        const template = doc.data();
         updates.forEach((update) => {
-            (template as any)[update] = req.body[update]; // Use Type Assertion
+            if (template && update in template) {
+                (template as any)[update] = req.body[update];
+            }
         });
-        await template.save();
-        logger('info', `Modelo de documento atualizado: ${template._id}`);
-        res.send(template);
+        await docRef.update(template!);
+
+        logger('info', `Modelo de documento atualizado: ${docRef.id}`);
+        res.send({ id: docRef.id, ...template });
     } catch (error) {
         logger('error', 'Erro ao atualizar modelo de documento:', error);
         res.status(400).send(error);
@@ -72,13 +84,16 @@ export const updateDocumentTemplate = async (req: Request, res: Response) => {
 // Deletar um modelo de documento específico
 export const deleteDocumentTemplate = async (req: Request, res: Response) => {
     try {
-        const template = await DocumentTemplate.findByIdAndDelete(req.params.id);
-        if (!template) {
+        const docRef = documentTemplatesCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Modelo de documento não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        logger('info', `Modelo de documento deletado: ${template._id}`);
-        res.send(template);
+        await docRef.delete();
+
+        logger('info', `Modelo de documento deletado: ${docRef.id}`);
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar modelo de documento:', error);
         res.status(500).send(error);

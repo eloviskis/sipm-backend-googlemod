@@ -1,11 +1,15 @@
 import { Request, Response } from 'express';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger';
-import User from '../models/userModel'; // Importar o modelo de Usuário
+
+const db = admin.firestore();
+const usersCollection = db.collection('users');
 
 // Função para obter estatísticas de usuários
 export const getUserStats = async (req: Request, res: Response) => {
     try {
-        const stats = { count: 100 }; // Simular um retorno de 100 usuários cadastrados
+        const snapshot = await usersCollection.get();
+        const stats = { count: snapshot.size }; // Obtém a contagem de usuários
         logger('info', 'Estatísticas de usuários recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
@@ -17,7 +21,8 @@ export const getUserStats = async (req: Request, res: Response) => {
 // Função para obter estatísticas de relatórios
 export const getReportStats = async (req: Request, res: Response) => {
     try {
-        const stats = { count: 50 }; // Simular um retorno de 50 relatórios gerados
+        const snapshot = await db.collection('reports').get();
+        const stats = { count: snapshot.size }; // Obtém a contagem de relatórios
         logger('info', 'Estatísticas de relatórios recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
@@ -29,7 +34,8 @@ export const getReportStats = async (req: Request, res: Response) => {
 // Função para obter estatísticas de configurações
 export const getSettingsStats = async (req: Request, res: Response) => {
     try {
-        const stats = { count: 20 }; // Simular um retorno de 20 configurações
+        const snapshot = await db.collection('settings').get();
+        const stats = { count: snapshot.size }; // Obtém a contagem de configurações
         logger('info', 'Estatísticas de configurações recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
@@ -41,7 +47,8 @@ export const getSettingsStats = async (req: Request, res: Response) => {
 // Função para obter estatísticas de notificações
 export const getNotificationStats = async (req: Request, res: Response) => {
     try {
-        const stats = { count: 200 }; // Simular um retorno de 200 notificações enviadas
+        const snapshot = await db.collection('notifications').get();
+        const stats = { count: snapshot.size }; // Obtém a contagem de notificações
         logger('info', 'Estatísticas de notificações recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
@@ -56,13 +63,16 @@ export const addPermission = async (req: Request, res: Response) => {
     const { permission } = req.body;
 
     try {
-        const user = await User.findById(id);
-        if (!user) {
+        const docRef = usersCollection.doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             return res.status(404).send({ error: 'User not found.' });
         }
 
-        user.permissions.push(permission);
-        await user.save();
+        const user = doc.data();
+        user.permissions = user.permissions ? [...user.permissions, permission] : [permission];
+        await docRef.update({ permissions: user.permissions });
+        
         logger('info', `Permissão ${permission} adicionada ao usuário ${user.email}`);
         res.status(200).send({ message: 'Permission added successfully.', user });
     } catch (error) {
@@ -77,13 +87,16 @@ export const removePermission = async (req: Request, res: Response) => {
     const { permission } = req.body;
 
     try {
-        const user = await User.findById(id);
-        if (!user) {
+        const docRef = usersCollection.doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             return res.status(404).send({ error: 'User not found.' });
         }
 
-        user.permissions = user.permissions.filter((perm: string) => perm !== permission);
-        await user.save();
+        const user = doc.data();
+        user.permissions = user.permissions ? user.permissions.filter((perm: string) => perm !== permission) : [];
+        await docRef.update({ permissions: user.permissions });
+        
         logger('info', `Permissão ${permission} removida do usuário ${user.email}`);
         res.status(200).send({ message: 'Permission removed successfully.', user });
     } catch (error) {

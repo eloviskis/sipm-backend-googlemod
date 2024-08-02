@@ -1,14 +1,19 @@
 import { Request, Response } from 'express';
-import PreConsultation, { IPreConsultation } from '../models/preConsultation';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger';
+
+const db = admin.firestore();
+const preConsultationsCollection = db.collection('preConsultations');
 
 // Criar uma nova pré-consulta
 export const createPreConsultation = async (req: Request, res: Response) => {
     try {
-        const preConsultation = new PreConsultation(req.body);
-        await preConsultation.save();
-        logger('info', `Pré-consulta criada: ${preConsultation._id}`);
-        res.status(201).send(preConsultation);
+        const preConsultation = req.body;
+        const docRef = await preConsultationsCollection.add(preConsultation);
+        const savedPreConsultation = await docRef.get();
+
+        logger('info', `Pré-consulta criada: ${docRef.id}`);
+        res.status(201).send({ id: docRef.id, ...savedPreConsultation.data() });
     } catch (error) {
         logger('error', 'Erro ao criar pré-consulta:', error);
         res.status(400).send(error);
@@ -18,7 +23,8 @@ export const createPreConsultation = async (req: Request, res: Response) => {
 // Obter todas as pré-consultas
 export const getPreConsultations = async (req: Request, res: Response) => {
     try {
-        const preConsultations = await PreConsultation.find({});
+        const snapshot = await preConsultationsCollection.get();
+        const preConsultations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(preConsultations);
     } catch (error) {
         logger('error', 'Erro ao obter pré-consultas:', error);
@@ -29,12 +35,12 @@ export const getPreConsultations = async (req: Request, res: Response) => {
 // Obter uma pré-consulta específica
 export const getPreConsultation = async (req: Request, res: Response) => {
     try {
-        const preConsultation = await PreConsultation.findById(req.params.id);
-        if (!preConsultation) {
+        const doc = await preConsultationsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
-        res.send(preConsultation);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter pré-consulta:', error);
         res.status(500).send(error);
@@ -52,17 +58,23 @@ export const updatePreConsultation = async (req: Request, res: Response) => {
     }
 
     try {
-        const preConsultation: IPreConsultation | null = await PreConsultation.findById(req.params.id);
-        if (!preConsultation) {
+        const docRef = preConsultationsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
+
+        const preConsultation = doc.data();
         updates.forEach((update) => {
-            (preConsultation as any)[update] = req.body[update]; // Use Type Assertion
+            if (preConsultation && update in preConsultation) {
+                (preConsultation as any)[update] = req.body[update];
+            }
         });
-        await preConsultation.save();
-        logger('info', `Pré-consulta atualizada: ${preConsultation._id}`);
-        res.send(preConsultation);
+        await docRef.update(preConsultation!);
+
+        logger('info', `Pré-consulta atualizada: ${docRef.id}`);
+        res.send({ id: docRef.id, ...preConsultation });
     } catch (error) {
         logger('error', 'Erro ao atualizar pré-consulta:', error);
         res.status(400).send(error);
@@ -72,13 +84,16 @@ export const updatePreConsultation = async (req: Request, res: Response) => {
 // Deletar uma pré-consulta específica
 export const deletePreConsultation = async (req: Request, res: Response) => {
     try {
-        const preConsultation = await PreConsultation.findByIdAndDelete(req.params.id);
-        if (!preConsultation) {
+        const docRef = preConsultationsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
-        logger('info', `Pré-consulta deletada: ${preConsultation._id}`);
-        res.send(preConsultation);
+        await docRef.delete();
+
+        logger('info', `Pré-consulta deletada: ${docRef.id}`);
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar pré-consulta:', error);
         res.status(500).send(error);

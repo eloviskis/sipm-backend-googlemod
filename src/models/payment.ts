@@ -1,42 +1,64 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import admin from 'firebase-admin';
 
-export interface IPayment extends Document {
+// Inicializa o Firebase Admin SDK (certifique-se de que está configurado corretamente)
+admin.initializeApp({
+    credential: admin.credential.applicationDefault()
+});
+
+const db = admin.firestore();
+const paymentsCollection = db.collection('payments');
+
+export interface Payment {
+    id?: string;
     userId: string;
     amount: number;
     status: 'PENDING' | 'COMPLETED' | 'FAILED';
     method: string;
     invoiceId: string;
+    createdAt?: FirebaseFirestore.Timestamp;
+    updatedAt?: FirebaseFirestore.Timestamp;
 }
 
-const paymentSchema = new Schema<IPayment>({
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    amount: {
-        type: Number,
-        required: true,
-        min: 0,
-    },
-    status: {
-        type: String,
-        required: true,
-        enum: ['PENDING', 'COMPLETED', 'FAILED'],
-    },
-    method: {
-        type: String,
-        required: true,
-    },
-    invoiceId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Invoice',
-        required: true,
-    },
-}, {
-    timestamps: true,
-});
+// Função para criar um novo pagamento
+export const createPayment = async (data: Payment) => {
+    const docRef = await paymentsCollection.add({
+        ...data,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    const doc = await docRef.get();
+    return { id: doc.id, ...doc.data() };
+};
 
-const Payment = mongoose.model<IPayment>('Payment', paymentSchema);
+// Função para obter todos os pagamentos
+export const getPayments = async () => {
+    const snapshot = await paymentsCollection.get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
 
-export default Payment;
+// Função para obter um pagamento específico
+export const getPaymentById = async (id: string) => {
+    const doc = await paymentsCollection.doc(id).get();
+    if (!doc.exists) {
+        throw new Error('Pagamento não encontrado');
+    }
+    return { id: doc.id, ...doc.data() };
+};
+
+// Função para atualizar um pagamento
+export const updatePayment = async (id: string, data: Partial<Payment>) => {
+    const docRef = paymentsCollection.doc(id);
+    await docRef.update({
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    const doc = await docRef.get();
+    return { id: doc.id, ...doc.data() };
+};
+
+// Função para deletar um pagamento
+export const deletePayment = async (id: string) => {
+    const docRef = paymentsCollection.doc(id);
+    await docRef.delete();
+    return { id };
+};

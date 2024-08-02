@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Message, { IMessage } from '../models/message';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 import { IUser } from '../models/user'; // Assegurando que IUser seja importado
 
@@ -8,14 +8,18 @@ interface AuthRequest extends Request {
     user?: IUser;
 }
 
+const db = admin.firestore();
+const messagesCollection = db.collection('messages');
+
 // Função para enviar uma mensagem
 export const sendMessage = async (req: AuthRequest, res: Response) => {
     try {
-        const message: IMessage = new Message(req.body);
-        const savedMessage = await message.save();
+        const message = req.body;
+        const docRef = await messagesCollection.add(message);
+        const savedMessage = await docRef.get();
 
-        logger('info', `Mensagem enviada: ${savedMessage._id}`); // Adicionando log de envio de mensagem
-        res.status(201).send(savedMessage);
+        logger('info', `Mensagem enviada: ${docRef.id}`); // Adicionando log de envio de mensagem
+        res.status(201).send({ id: docRef.id, ...savedMessage.data() });
     } catch (error) {
         logger('error', 'Erro ao enviar mensagem:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -36,7 +40,8 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
             return res.status(403).send({ error: 'Acesso negado' });
         }
 
-        const messages = await Message.find({ to: userId });
+        const snapshot = await messagesCollection.where('to', '==', userId).get();
+        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         logger('info', `Mensagens obtidas para o usuário: ${userId}`); // Adicionando log de obtenção de mensagens
         res.send(messages);

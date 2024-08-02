@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
-import Payment from '../models/payment';
+import admin from 'firebase-admin';
 import { processPayment, generateInvoice } from '../services/paymentService';
 import logger from '../middlewares/logger'; // Certifique-se de que logger está correto
+
+const db = admin.firestore();
+const paymentsCollection = db.collection('payments');
 
 // Função para processar um pagamento
 export const createPayment = async (req: Request, res: Response) => {
@@ -10,17 +13,18 @@ export const createPayment = async (req: Request, res: Response) => {
         const paymentResult = await processPayment(paymentDetails);
 
         if (paymentResult.success) {
-            const payment = new Payment(paymentResult.data);
-            await payment.save();
-            const invoice = await generateInvoice(payment);
+            const payment = paymentResult.data;
+            const docRef = await paymentsCollection.add(payment);
+            const savedPayment = await docRef.get();
+            const invoice = await generateInvoice(savedPayment.data());
 
-            console.info(`Pagamento processado: ${payment._id}`); // Uso correto do console.info
-            res.status(201).send({ payment, invoice });
+            logger.info(`Pagamento processado: ${docRef.id}`);
+            res.status(201).send({ payment: { id: docRef.id, ...savedPayment.data() }, invoice });
         } else {
             res.status(400).send({ error: paymentResult.error });
         }
     } catch (error) {
-        console.error('Erro ao processar pagamento:', error); // Uso correto do console.error
+        logger.error('Erro ao processar pagamento:', error);
         res.status(500).send(error);
     }
 };
@@ -28,10 +32,11 @@ export const createPayment = async (req: Request, res: Response) => {
 // Função para obter todos os pagamentos
 export const getPayments = async (req: Request, res: Response) => {
     try {
-        const payments = await Payment.find({});
+        const snapshot = await paymentsCollection.get();
+        const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(payments);
     } catch (error) {
-        console.error('Erro ao obter pagamentos:', error); // Uso correto do console.error
+        logger.error('Erro ao obter pagamentos:', error);
         res.status(500).send(error);
     }
 };
@@ -39,13 +44,13 @@ export const getPayments = async (req: Request, res: Response) => {
 // Função para obter um pagamento específico
 export const getPayment = async (req: Request, res: Response) => {
     try {
-        const payment = await Payment.findById(req.params.id);
-        if (!payment) {
+        const doc = await paymentsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             return res.status(404).send();
         }
-        res.send(payment);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
-        console.error('Erro ao obter pagamento:', error); // Uso correto do console.error
+        logger.error('Erro ao obter pagamento:', error);
         res.status(500).send(error);
     }
 };
@@ -53,15 +58,17 @@ export const getPayment = async (req: Request, res: Response) => {
 // Função para deletar um pagamento
 export const deletePayment = async (req: Request, res: Response) => {
     try {
-        const payment = await Payment.findByIdAndDelete(req.params.id);
-        if (!payment) {
+        const docRef = paymentsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             return res.status(404).send();
         }
+        await docRef.delete();
 
-        console.info(`Pagamento deletado: ${payment._id}`); // Uso correto do console.info
-        res.send(payment);
+        logger.info(`Pagamento deletado: ${docRef.id}`);
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
-        console.error('Erro ao deletar pagamento:', error); // Uso correto do console.error
+        logger.error('Erro ao deletar pagamento:', error);
         res.status(500).send(error);
     }
 };

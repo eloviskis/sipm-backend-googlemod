@@ -1,64 +1,71 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
-import fs from 'fs';
+import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+import admin from 'firebase-admin';
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
+const storage = new Storage();
+const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET || 'your-bucket-name');
+
+// Configuração do Multer para armazenamento local temporário
+const upload = multer({
+    storage: multer.memoryStorage()
 });
-
-const upload = multer({ storage });
 
 export const uploadMiddleware = upload.single('file');
 
 // Função para fazer upload de um arquivo
-export const uploadFile = (req: Request, res: Response) => {
+export const uploadFile = async (req: Request, res: Response) => {
     const file = req.file;
     if (!file) {
         logger('error', 'Nenhum arquivo enviado'); // Adicionando log de erro
         return res.status(400).send({ message: 'Por favor, faça o upload de um arquivo' });
     }
-    logger('info', `Arquivo carregado: ${file.filename}`); // Adicionando log de sucesso
-    res.send({ message: 'Arquivo carregado com sucesso', file });
+
+    const blob = bucket.file(`${Date.now()}-${file.originalname}`);
+    const blobStream = blob.createWriteStream();
+
+    blobStream.on('error', err => {
+        logger('error', `Erro ao fazer upload do arquivo: ${err.message}`); // Adicionando log de erro
+        return res.status(500).send({ message: 'Erro ao fazer upload do arquivo' });
+    });
+
+    blobStream.on('finish', () => {
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        logger('info', `Arquivo carregado: ${blob.name}`); // Adicionando log de sucesso
+        res.status(200).send({ message: 'Arquivo carregado com sucesso', file: publicUrl });
+    });
+
+    blobStream.end(file.buffer);
 };
 
 // Função para fazer download de um arquivo
-export const downloadFile = (req: Request, res: Response) => {
+export const downloadFile = async (req: Request, res: Response) => {
     const fileName = req.params.fileName;
-    const filePath = path.join(__dirname, '../../uploads', fileName);
+    const file = bucket.file(fileName);
 
-    if (!fs.existsSync(filePath)) {
+    try {
+        await file.download({ destination: path.join('/tmp', fileName) });
+        logger('info', `Arquivo baixado: ${fileName}`); // Adicionando log de sucesso
+        res.download(path.join('/tmp', fileName));
+    } catch (error) {
         logger('error', `Arquivo não encontrado: ${fileName}`); // Adicionando log de erro
-        return res.status(404).send({ message: 'Arquivo não encontrado' });
+        res.status(404).send({ message: 'Arquivo não encontrado' });
     }
-
-    logger('info', `Arquivo baixado: ${fileName}`); // Adicionando log de sucesso
-    res.download(filePath);
 };
 
 // Função para deletar um arquivo
-export const deleteFile = (req: Request, res: Response) => {
+export const deleteFile = async (req: Request, res: Response) => {
     const fileName = req.params.fileName;
-    const filePath = path.join(__dirname, '../../uploads', fileName);
+    const file = bucket.file(fileName);
 
-    if (!fs.existsSync(filePath)) {
-        logger('error', `Arquivo não encontrado para deletar: ${fileName}`); // Adicionando log de erro
-        return res.status(404).send({ message: 'Arquivo não encontrado' });
-    }
-
-    fs.unlink(filePath, (err) => {
-        if (err) {
-            logger('error', `Erro ao deletar arquivo: ${err.message}`); // Adicionando log de erro
-            return res.status(500).send({ message: 'Erro ao deletar arquivo' });
-        }
-
+    try {
+        await file.delete();
         logger('info', `Arquivo deletado: ${fileName}`); // Adicionando log de sucesso
-        res.send({ message: 'Arquivo deletado com sucesso' });
-    });
+        res.status(200).send({ message: 'Arquivo deletado com sucesso' });
+    } catch (error) {
+        logger('error', `Erro ao deletar arquivo: ${error.message}`); // Adicionando log de erro
+        res.status(500).send({ message: 'Erro ao deletar arquivo' });
+    }
 };

@@ -1,14 +1,19 @@
 import { Request, Response } from 'express';
-import Motivo, { IMotivo } from '../models/motivo';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger';
+
+const db = admin.firestore();
+const motivosCollection = db.collection('motivos');
 
 // Criar um novo motivo
 export const createMotivo = async (req: Request, res: Response) => {
     try {
-        const motivo = new Motivo(req.body);
-        await motivo.save();
-        logger('info', `Motivo criado: ${motivo._id}`);
-        res.status(201).send(motivo);
+        const motivo = req.body;
+        const docRef = await motivosCollection.add(motivo);
+        const savedMotivo = await docRef.get();
+
+        logger('info', `Motivo criado: ${docRef.id}`);
+        res.status(201).send({ id: docRef.id, ...savedMotivo.data() });
     } catch (error) {
         logger('error', 'Erro ao criar motivo:', error);
         res.status(400).send(error);
@@ -18,7 +23,8 @@ export const createMotivo = async (req: Request, res: Response) => {
 // Obter todos os motivos
 export const getMotivos = async (req: Request, res: Response) => {
     try {
-        const motivos = await Motivo.find({});
+        const snapshot = await motivosCollection.get();
+        const motivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(motivos);
     } catch (error) {
         logger('error', 'Erro ao obter motivos:', error);
@@ -29,19 +35,19 @@ export const getMotivos = async (req: Request, res: Response) => {
 // Obter um motivo específico
 export const getMotivo = async (req: Request, res: Response) => {
     try {
-        const motivo = await Motivo.findById(req.params.id);
-        if (!motivo) {
+        const doc = await motivosCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        res.send(motivo);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter motivo:', error);
         res.status(500).send(error);
     }
 };
 
-// Atualizar um motivo específico (USANDO TYPE ASSERTION)
+// Atualizar um motivo específico
 export const updateMotivo = async (req: Request, res: Response) => {
     const updates = Object.keys(req.body);
     const allowedUpdates = ['name', 'description'];
@@ -52,17 +58,23 @@ export const updateMotivo = async (req: Request, res: Response) => {
     }
 
     try {
-        const motivo: IMotivo | null = await Motivo.findById(req.params.id);
-        if (!motivo) {
+        const docRef = motivosCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
+
+        const motivo = doc.data();
         updates.forEach((update) => {
-            (motivo as any)[update] = req.body[update]; // Use Type Assertion
+            if (motivo && update in motivo) {
+                (motivo as any)[update] = req.body[update];
+            }
         });
-        await motivo.save();
-        logger('info', `Motivo atualizado: ${motivo._id}`);
-        res.send(motivo);
+        await docRef.update(motivo!);
+
+        logger('info', `Motivo atualizado: ${docRef.id}`);
+        res.send({ id: docRef.id, ...motivo });
     } catch (error) {
         logger('error', 'Erro ao atualizar motivo:', error);
         res.status(400).send(error);
@@ -72,13 +84,16 @@ export const updateMotivo = async (req: Request, res: Response) => {
 // Deletar um motivo específico
 export const deleteMotivo = async (req: Request, res: Response) => {
     try {
-        const motivo = await Motivo.findByIdAndDelete(req.params.id);
-        if (!motivo) {
+        const docRef = motivosCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        logger('info', `Motivo deletado: ${motivo._id}`);
-        res.send(motivo);
+        await docRef.delete();
+
+        logger('info', `Motivo deletado: ${docRef.id}`);
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar motivo:', error);
         res.status(500).send(error);

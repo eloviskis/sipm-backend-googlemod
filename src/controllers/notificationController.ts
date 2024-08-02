@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
-import Notification, { INotification } from '../models/notification';
+import admin from 'firebase-admin';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
+
+const db = admin.firestore();
+const notificationsCollection = db.collection('notifications');
 
 // Função para criar uma nova notificação
 export const createNotification = async (req: Request, res: Response) => {
     try {
-        const notification: INotification = new Notification(req.body);
-        const savedNotification = await notification.save();
+        const notification = req.body;
+        const docRef = await notificationsCollection.add(notification);
+        const savedNotification = await docRef.get();
 
-        logger('info', `Notificação criada: ${savedNotification._id}`); // Adicionando log de criação de notificação
-        res.status(201).send(savedNotification);
+        logger('info', `Notificação criada: ${docRef.id}`); // Adicionando log de criação de notificação
+        res.status(201).send({ id: docRef.id, ...savedNotification.data() });
     } catch (error) {
         logger('error', 'Erro ao criar notificação:', error); // Adicionando log de erro
         res.status(400).send(error);
@@ -19,7 +23,8 @@ export const createNotification = async (req: Request, res: Response) => {
 // Função para obter todas as notificações
 export const getNotifications = async (req: Request, res: Response) => {
     try {
-        const notifications = await Notification.find({});
+        const snapshot = await notificationsCollection.get();
+        const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(notifications);
     } catch (error) {
         logger('error', 'Erro ao obter notificações:', error); // Adicionando log de erro
@@ -30,12 +35,12 @@ export const getNotifications = async (req: Request, res: Response) => {
 // Função para obter uma notificação específica
 export const getNotification = async (req: Request, res: Response) => {
     try {
-        const notification = await Notification.findById(req.params.id);
-        if (!notification) {
+        const doc = await notificationsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             logger('error', `Notificação não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(notification);
+        res.send({ id: doc.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao obter notificação:', error); // Adicionando log de erro
         res.status(500).send(error);
@@ -45,13 +50,16 @@ export const getNotification = async (req: Request, res: Response) => {
 // Função para deletar uma notificação específica
 export const deleteNotification = async (req: Request, res: Response) => {
     try {
-        const notification = await Notification.findByIdAndDelete(req.params.id);
-        if (!notification) {
+        const docRef = notificationsCollection.doc(req.params.id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
             logger('error', `Notificação não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        logger('info', `Notificação deletada: ${notification._id}`); // Adicionando log de deleção de notificação
-        res.send(notification);
+        await docRef.delete();
+
+        logger('info', `Notificação deletada: ${docRef.id}`); // Adicionando log de deleção de notificação
+        res.send({ id: docRef.id, ...doc.data() });
     } catch (error) {
         logger('error', 'Erro ao deletar notificação:', error); // Adicionando log de erro
         res.status(500).send(error);

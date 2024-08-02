@@ -1,33 +1,48 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import admin from 'firebase-admin';
 
-interface IFeature {
-  title: string;
-  description: string;
-  icon: string; // URL ou nome do ícone
-}
-
-interface IHomePageContent extends Document {
-  heroTitle: string;
-  heroSubtitle: string;
-  heroButtonText: string;
-  heroImage: string; // URL da imagem do herói
-  features: IFeature[];
-}
-
-const featureSchema = new Schema<IFeature>({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  icon: { type: String, required: true },
+// Inicializa o Firebase Admin SDK (certifique-se de que está configurado corretamente)
+admin.initializeApp({
+    credential: admin.credential.applicationDefault()
 });
 
-const homePageContentSchema = new Schema<IHomePageContent>({
-  heroTitle: { type: String, required: true },
-  heroSubtitle: { type: String, required: true },
-  heroButtonText: { type: String, required: true },
-  heroImage: { type: String, required: true },
-  features: [featureSchema],
-});
+const db = admin.firestore();
+const homePageContentCollection = db.collection('homePageContent');
 
-const HomePageContent = mongoose.model<IHomePageContent>('HomePageContent', homePageContentSchema);
+interface Feature {
+    title: string;
+    description: string;
+    icon: string; // URL ou nome do ícone
+}
 
-export default HomePageContent;
+export interface HomePageContent {
+    id?: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroButtonText: string;
+    heroImage: string; // URL da imagem do herói
+    features: Feature[];
+    createdAt?: FirebaseFirestore.Timestamp;
+    updatedAt?: FirebaseFirestore.Timestamp;
+}
+
+// Função para criar ou atualizar o conteúdo da página inicial
+export const setHomePageContent = async (data: HomePageContent) => {
+    const docRef = homePageContentCollection.doc('mainContent');
+    await docRef.set({
+        ...data,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    const doc = await docRef.get();
+    return { id: doc.id, ...doc.data() } as HomePageContent;
+};
+
+// Função para obter o conteúdo da página inicial
+export const getHomePageContent = async () => {
+    const docRef = homePageContentCollection.doc('mainContent');
+    const doc = await docRef.get();
+    if (!doc.exists) {
+        throw new Error('Conteúdo da página inicial não encontrado');
+    }
+    return { id: doc.id, ...doc.data() } as HomePageContent;
+};

@@ -1,12 +1,29 @@
 import { Request, Response } from 'express';
-import HomePageContent from '../models/HomePageContent';
+import admin from 'firebase-admin';
 
+const db = admin.firestore();
+const homePageContentDoc = db.collection('homePageContent').doc('mainContent');
+
+// Função para obter o conteúdo da página inicial
 export const getHomePageContent = async (req: Request, res: Response) => {
-  const content = await HomePageContent.findOne();
-  res.json(content);
+    try {
+        const doc = await homePageContentDoc.get();
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Conteúdo da página inicial não encontrado' });
+        }
+        res.json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao obter conteúdo da página inicial' });
+    }
 };
 
+// Função para atualizar o conteúdo da página inicial
 export const updateHomePageContent = async (req: Request, res: Response) => {
-  const content = await HomePageContent.findOneAndUpdate({}, req.body, { new: true, upsert: true });
-  res.json(content);
+    try {
+        await homePageContentDoc.set(req.body, { merge: true });
+        const updatedDoc = await homePageContentDoc.get();
+        res.json({ id: updatedDoc.id, ...updatedDoc.data() });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao atualizar conteúdo da página inicial' });
+    }
 };

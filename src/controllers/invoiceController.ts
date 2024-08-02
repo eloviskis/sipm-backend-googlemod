@@ -3,7 +3,15 @@ import { Request, Response } from 'express';
 import { generateInvoice } from '../services/pdfService';
 import { sendInvoiceEmail } from '../services/invoiceNotificationService';
 import logger from '../middlewares/logger';
+import admin from 'firebase-admin';
+import { Storage } from '@google-cloud/storage';
+import path from 'path';
 
+const db = admin.firestore();
+const storage = new Storage();
+const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET || 'your-bucket-name');
+
+// Função para criar uma fatura
 export const createInvoice = async (req: AuthRequest, res: Response) => {
     try {
         const invoiceData = req.body;
@@ -14,14 +22,33 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
         }
 
         // Gerar a fatura em PDF e obter o caminho do arquivo
-        const invoicePath = await generateInvoice(invoiceData);
+        const invoiceBuffer = await generateInvoice(invoiceData);
+        const fileName = `${Date.now()}-invoice.pdf`;
+        const blob = bucket.file(fileName);
 
-        // Enviar a fatura por e-mail
-        await sendInvoiceEmail(req.user.email, invoicePath);
+        const blobStream = blob.createWriteStream({
+            metadata: {
+                contentType: 'application/pdf',
+            },
+        });
 
-        logger('info', `Fatura gerada e enviada: ${invoicePath}`);
+        blobStream.on('error', (err) => {
+            logger('error', `Erro ao fazer upload da fatura: ${err.message}`);
+            return res.status(500).send({ error: 'Erro ao fazer upload da fatura' });
+        });
 
-        res.status(201).send({ message: 'Fatura gerada e enviada com sucesso' });
+        blobStream.on('finish', async () => {
+            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+
+            // Enviar a fatura por e-mail
+            await sendInvoiceEmail(req.user.email, publicUrl);
+
+            logger('info', `Fatura gerada e enviada: ${publicUrl}`);
+
+            res.status(201).send({ message: 'Fatura gerada e enviada com sucesso', url: publicUrl });
+        });
+
+        blobStream.end(invoiceBuffer);
     } catch (error) {
         if (error instanceof Error) {
             logger('error', `Erro ao criar fatura: ${error.message}`, error);

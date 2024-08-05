@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Função para enviar confirmação de agendamento
-export const sendAppointmentConfirmation = async (email: string, date: Date) => {
+export const sendAppointmentConfirmation = async (email: string, date: Date): Promise<void> => {
     const mailOptions = {
         from: process.env.GMAIL_USER || 'default_gmail_user',
         to: email,
@@ -21,13 +21,17 @@ export const sendAppointmentConfirmation = async (email: string, date: Date) => 
     try {
         const info = await transporter.sendMail(mailOptions);
         console.log(`Email de confirmação enviado: ${info.response}`);
-    } catch (error) {
-        console.error(`Erro ao enviar email de confirmação: ${(error as Error).message}`);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Erro ao enviar email de confirmação: ${error.message}`);
+        } else {
+            console.error('Erro desconhecido ao enviar email de confirmação');
+        }
     }
 };
 
 // Função para enviar lembrete de agendamento
-export const sendAppointmentReminder = async (email: string, date: Date) => {
+export const sendAppointmentReminder = async (email: string, date: Date): Promise<void> => {
     const mailOptions = {
         from: process.env.GMAIL_USER || 'default_gmail_user',
         to: email,
@@ -38,7 +42,11 @@ export const sendAppointmentReminder = async (email: string, date: Date) => {
     try {
         const info = await transporter.sendMail(mailOptions);
         console.log(`Email de lembrete enviado: ${info.response}`);
-    } catch (error) {
-        console.error(`Erro ao enviar email de lembrete: ${(error as Error).message}`);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Erro ao enviar email de lembrete: ${error.message}`);
+        } else {
+            console.error('Erro desconhecido ao enviar email de lembrete');
+        }
     }
 };

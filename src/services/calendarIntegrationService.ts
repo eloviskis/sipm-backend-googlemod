@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, calendar_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 
 // Configuração do Google Calendar
@@ -14,9 +14,9 @@ oAuth2Client.setCredentials({
 
 // Função para integrar com Google Calendar
 export const integrateWithGoogleCalendar = async (appointment: any) => {
-    const calendar = google.calendar('v3');
+    const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
-    const event = {
+    const event: calendar_v3.Schema$Event = {
         summary: 'Consulta Médica',
         description: 'Descrição da consulta',
         start: {

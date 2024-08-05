@@ -1,6 +1,7 @@
+import * as passport from 'passport';
 import express from 'express';
 import session from 'express-session';
-import passport from './config/passport';
+import { initialize } from 'passport';
 import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import authRoutes from './routes/authRoutes';
@@ -63,31 +64,31 @@ app.use(session({
     }
 }));
 
-app.use(passport.initialize());
+app.use(initialize());
 app.use(passport.session());
 
 app.use(mfaMiddleware);
 
 app.use('/api/auth', authRoutes);
 app.use(authMiddleware);
-app.use('/api', userRoutes);
-app.use('/api', appointmentRoutes);
-app.use('/api', clinicRoutes);
-app.use('/api', fileRoutes);
-app.use('/api', pageRoutes);
-app.use('/api', themeRoutes);
-app.use('/api', patientRecordRoutes);
-app.use('/api', invoiceRoutes);
-app.use('/api', messageRoutes);
-app.use('/api', reportRoutes);
-app.use('/api', whatsappRoutes);
-app.use('/api', themePreferencesRoutes);
-app.use('/api', paymentRoutes);
-app.use('/api', documentTemplateRoutes); // Adicionar nova rota
-app.use('/api', preConsultationRoutes); // Adicionar nova rota
-app.use('/api', motivoRoutes); // Adicionar nova rota
-app.use('/api', accountsReceivableRoutes);
-app.use('/api', accountsPayableRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/clinics', clinicRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/pages', pageRoutes);
+app.use('/api/themes', themeRoutes);
+app.use('/api/patient-records', patientRecordRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/theme-preferences', themePreferencesRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/document-templates', documentTemplateRoutes); // Adicionar nova rota
+app.use('/api/pre-consultations', preConsultationRoutes); // Adicionar nova rota
+app.use('/api/motivos', motivoRoutes); // Adicionar nova rota
+app.use('/api/accounts-receivable', accountsReceivableRoutes);
+app.use('/api/accounts-payable', accountsPayableRoutes);
 app.use(errorHandler);
 
 app.get('/', (req, res) => {

@@ -1,4 +1,4 @@
-import { IPayment } from '../models/payment';
+import { Payment } from '../models/payment';
 
 export const processPayment = async (paymentDetails: any) => {
     // Implementar lógica de processamento de pagamento
@@ -22,7 +22,7 @@ export const processPayment = async (paymentDetails: any) => {
     }
 };
 
-export const generateInvoice = async (payment: IPayment) => {
+export const generateInvoice = async (payment: Payment) => {
     // Implementar lógica de geração de fatura
     // Simulação de geração de fatura
     return {

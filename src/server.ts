@@ -19,12 +19,25 @@ import themePreferencesRoutes from './routes/themePreferencesRoutes';
 import themeRoutes from './routes/themeRoutes';
 import userRoutes from './routes/userRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
+import logger from './middlewares/logger'; // Adicionando logger
+import { ensureHttps } from './middlewares/httpsRedirect'; // Adicionando redirecionamento HTTPS
 
 const app = express();
+
+// Middleware para redirecionar HTTP para HTTPS
+if (process.env.NODE_ENV === 'production') {
+    app.use(ensureHttps);
+}
 
 // Middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Logger middleware para registrar requisições
+app.use((req, res, next) => {
+    logger('info', 'Request logged', { method: req.method, url: req.url });
+    next();
+});
 
 // Configurar HTTPS com os certificados
 const sslOptions = {
@@ -55,6 +68,7 @@ app.get('/', (req, res) => {
     res.send('Olá mundo HTTPS!');
 });
 
+// Iniciando o servidor HTTPS
 https.createServer(sslOptions, app).listen(3001, () => {
     console.log('Servidor HTTPS rodando na porta 3001');
 });

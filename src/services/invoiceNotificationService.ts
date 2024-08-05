@@ -6,15 +6,24 @@ import path from 'path';
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-        user: process.env.GMAIL_USER!,
-        pass: process.env.GMAIL_PASS!,
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
     },
 });
 
-// Função para enviar fatura por e-mail
-export const sendInvoiceEmail = async (email: string, invoicePath: string) => {
+/**
+ * Função para enviar fatura por e-mail
+ * @param {string} email - O endereço de e-mail do destinatário
+ * @param {string} invoicePath - O caminho para o arquivo da fatura em PDF
+ */
+export const sendInvoiceEmail = async (email: string, invoicePath: string): Promise<void> => {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+        logger('error', 'As variáveis de ambiente GMAIL_USER e GMAIL_PASS não estão definidas.');
+        throw new Error('Configuração de e-mail incompleta.');
+    }
+
     const mailOptions = {
-        from: process.env.GMAIL_USER!,
+        from: process.env.GMAIL_USER,
         to: email,
         subject: 'Sua Fatura',
         text: 'Anexamos sua fatura em PDF.',

@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import { getUserStats, getReportStats, getSettingsStats, getNotificationStats, addPermission, removePermission } from '../controllers/adminController'; // Importar novos controladores
-import { authMiddleware, permissionMiddleware } from '../middlewares/authMiddleware'; // Importar middlewares de autenticação e autorização
+import { getUserStats, getReportStats, getSettingsStats, getNotificationStats, addPermission, removePermission } from '../controllers/adminController';
+import { authMiddleware, permissionMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-// Rotas existentes
-router.get('/admin/users/stats', getUserStats);
-router.get('/admin/reports/stats', getReportStats);
-router.get('/admin/settings/stats', getSettingsStats);
-router.get('/admin/notifications/stats', getNotificationStats);
+// Rotas existentes com middleware de autenticação e autorização
+router.get('/admin/users/stats', authMiddleware, permissionMiddleware('ViewStats'), getUserStats);
+router.get('/admin/reports/stats', authMiddleware, permissionMiddleware('ViewStats'), getReportStats);
+router.get('/admin/settings/stats', authMiddleware, permissionMiddleware('ViewStats'), getSettingsStats);
+router.get('/admin/notifications/stats', authMiddleware, permissionMiddleware('ViewStats'), getNotificationStats);
 
 // Novas rotas para gerenciamento de permissões
-router.patch('/admin/users/:id/add-permission', authMiddleware, permissionMiddleware('ManagePermissions'), addPermission); // Rota para adicionar permissão a um usuário
-router.patch('/admin/users/:id/remove-permission', authMiddleware, permissionMiddleware('ManagePermissions'), removePermission); // Rota para remover permissão de um usuário
+router.patch('/admin/users/:id/add-permission', authMiddleware, permissionMiddleware('ManagePermissions'), addPermission);
+router.patch('/admin/users/:id/remove-permission', authMiddleware, permissionMiddleware('ManagePermissions'), removePermission);
 
 export default router;

@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { createPage, getPages, getPage, updatePage, deletePage } from '../controllers/pageController';
+import { authMiddleware, permissionMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-router.post('/pages', createPage);
-router.get('/pages', getPages);
-router.get('/pages/:id', getPage);
-router.patch('/pages/:id', updatePage);
-router.delete('/pages/:id', deletePage);
+router.post('/pages', authMiddleware, permissionMiddleware('CreatePage'), createPage);
+router.get('/pages', authMiddleware, permissionMiddleware('ViewPages'), getPages);
+router.get('/pages/:id', authMiddleware, permissionMiddleware('ViewPage'), getPage);
+router.patch('/pages/:id', authMiddleware, permissionMiddleware('UpdatePage'), updatePage);
+router.delete('/pages/:id', authMiddleware, permissionMiddleware('DeletePage'), deletePage);
 
 export default router;

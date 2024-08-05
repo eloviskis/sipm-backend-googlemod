@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { configureMFA, verifyMFA } from '../controllers/mfaController'; // Adicionando controlador de MFA
-import mfaMiddleware from '../middlewares/mfaMiddleware'; // Middleware para MFA
+import { configureMFA, verifyMFA } from '../controllers/mfaController';
+import mfaMiddleware from '../middlewares/mfaMiddleware';
 import { forgotPassword } from '../controllers/authController';
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
@@ -40,8 +41,8 @@ router.get('/auth/linkedin/callback', passport.authenticate('linkedin', { failur
 );
 
 // Rotas para configurar e verificar MFA
-router.post('/auth/mfa/setup', configureMFA);
-router.post('/auth/mfa/verify', verifyMFA);
+router.post('/auth/mfa/setup', authMiddleware, configureMFA);
+router.post('/auth/mfa/verify', authMiddleware, verifyMFA);
 
 router.post('/forgot-password', forgotPassword);
 

@@ -4,15 +4,25 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     service: 'Gmail',
     auth: {
-        user: process.env.GMAIL_USER || 'default_gmail_user',
-        pass: process.env.GMAIL_PASS || 'default_gmail_pass',
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
     },
 });
 
+// Função para validar email
+const validateEmail = (email: string): void => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new Error('Email inválido.');
+    }
+};
+
 // Função para enviar confirmação de agendamento
 export const sendAppointmentConfirmation = async (email: string, date: Date): Promise<void> => {
+    validateEmail(email);
+
     const mailOptions = {
-        from: process.env.GMAIL_USER || 'default_gmail_user',
+        from: process.env.GMAIL_USER,
         to: email,
         subject: 'Confirmação de Agendamento',
         text: `Sua consulta foi agendada para ${date}.`,
@@ -27,13 +37,16 @@ export const sendAppointmentConfirmation = async (email: string, date: Date): Pr
         } else {
             console.error('Erro desconhecido ao enviar email de confirmação');
         }
+        throw error; // Re-throw the error after logging it
     }
 };
 
 // Função para enviar lembrete de agendamento
 export const sendAppointmentReminder = async (email: string, date: Date): Promise<void> => {
+    validateEmail(email);
+
     const mailOptions = {
-        from: process.env.GMAIL_USER || 'default_gmail_user',
+        from: process.env.GMAIL_USER,
         to: email,
         subject: 'Lembrete de Agendamento',
         text: `Lembrete: Sua consulta está agendada para ${date}.`,
@@ -48,5 +61,6 @@ export const sendAppointmentReminder = async (email: string, date: Date): Promis
         } else {
             console.error('Erro desconhecido ao enviar email de lembrete');
         }
+        throw error; // Re-throw the error after logging it
     }
 };

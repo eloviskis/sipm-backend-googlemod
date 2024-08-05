@@ -3,17 +3,27 @@ import { OAuth2Client } from 'google-auth-library';
 
 // Configuração do Google Calendar
 const oAuth2Client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID!,
-    process.env.GOOGLE_CLIENT_SECRET!,
-    process.env.GOOGLE_REDIRECT_URI!
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
 );
 
 oAuth2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN!,
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
 });
+
+// Função para validar os dados do agendamento
+const validateAppointment = (appointment: any): void => {
+    if (!appointment.date) {
+        throw new Error('A data do agendamento é obrigatória.');
+    }
+    // Adicione outras validações necessárias
+};
 
 // Função para integrar com Google Calendar
 export const integrateWithGoogleCalendar = async (appointment: any) => {
+    validateAppointment(appointment);
+
     const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
     const event: calendar_v3.Schema$Event = {
@@ -46,5 +56,6 @@ export const integrateWithGoogleCalendar = async (appointment: any) => {
         } else {
             console.error('Erro desconhecido ao criar evento no Google Calendar');
         }
+        throw error; // Re-throw the error after logging it
     }
 };

@@ -13,8 +13,15 @@ export const forgotPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
 
   try {
+    // Verifica se o email foi fornecido
+    if (!email) {
+      logger('error', 'Email não fornecido na solicitação de redefinição de senha');
+      return res.status(400).json({ message: 'Email é obrigatório' });
+    }
+
     const snapshot = await usersCollection.where('email', '==', email).get();
     if (snapshot.empty) {
+      logger('error', `Usuário não encontrado para o email: ${email}`);
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
@@ -38,8 +45,12 @@ export const forgotPassword = async (req: Request, res: Response) => {
     await sgMail.send(mailOptions);
     logger('info', `E-mail de redefinição de senha enviado para: ${email}`);
     res.status(200).json({ message: 'E-mail de redefinição de senha enviado com sucesso' });
-  } catch (error) {
-    logger('error', 'Erro ao processar solicitação de redefinição de senha:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      logger('error', `Erro ao processar solicitação de redefinição de senha: ${error.message}`);
+    } else {
+      logger('error', 'Erro desconhecido ao processar solicitação de redefinição de senha');
+    }
     res.status(500).json({ message: 'Erro ao processar solicitação de redefinição de senha' });
   }
 };

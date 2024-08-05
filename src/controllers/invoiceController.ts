@@ -11,10 +11,24 @@ const db = admin.firestore();
 const storage = new Storage();
 const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET || 'your-bucket-name');
 
+// Função para validar dados da fatura
+const validateInvoiceData = (invoiceData: any): void => {
+    if (!invoiceData.customerName || typeof invoiceData.customerName !== 'string') {
+        throw new Error('O nome do cliente é obrigatório e deve ser uma string.');
+    }
+    if (!invoiceData.amount || typeof invoiceData.amount !== 'number') {
+        throw new Error('O valor da fatura é obrigatório e deve ser um número.');
+    }
+    // Adicione outras validações necessárias
+};
+
 // Função para criar uma fatura
 export const createInvoice = async (req: AuthRequest, res: Response) => {
     try {
         const invoiceData = req.body;
+
+        // Validação dos dados da fatura
+        validateInvoiceData(invoiceData);
 
         // Verificar se req.user está definido e possui a propriedade email
         if (!req.user || !req.user.email) {
@@ -49,7 +63,7 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
         });
 
         blobStream.end(invoiceBuffer);
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof Error) {
             logger('error', `Erro ao criar fatura: ${error.message}`, error);
             res.status(500).send({ error: 'Erro ao criar fatura', details: error.message });

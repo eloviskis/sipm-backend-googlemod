@@ -11,18 +11,33 @@ interface AuthRequest extends Request {
 const db = admin.firestore();
 const messagesCollection = db.collection('messages');
 
+// Função para validar dados da mensagem
+const validateMessageData = (message: any): void => {
+    if (!message.to || typeof message.to !== 'string') {
+        throw new Error('O destinatário da mensagem é obrigatório e deve ser uma string.');
+    }
+    if (!message.content || typeof message.content !== 'string') {
+        throw new Error('O conteúdo da mensagem é obrigatório e deve ser uma string.');
+    }
+    // Adicione outras validações necessárias
+};
+
 // Função para enviar uma mensagem
 export const sendMessage = async (req: AuthRequest, res: Response) => {
     try {
         const message = req.body;
+
+        // Validação dos dados da mensagem
+        validateMessageData(message);
+
         const docRef = await messagesCollection.add(message);
         const savedMessage = await docRef.get();
 
         logger('info', `Mensagem enviada: ${docRef.id}`); // Adicionando log de envio de mensagem
         res.status(201).send({ id: docRef.id, ...savedMessage.data() });
-    } catch (error) {
-        logger('error', 'Erro ao enviar mensagem:', error); // Adicionando log de erro
-        res.status(400).send(error);
+    } catch (error: any) {
+        logger('error', `Erro ao enviar mensagem: ${error.message}`); // Adicionando log de erro
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -45,8 +60,8 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
 
         logger('info', `Mensagens obtidas para o usuário: ${userId}`); // Adicionando log de obtenção de mensagens
         res.send(messages);
-    } catch (error) {
-        logger('error', 'Erro ao obter mensagens:', error); // Adicionando log de erro
-        res.status(500).send(error);
+    } catch (error: any) {
+        logger('error', `Erro ao obter mensagens: ${error.message}`); // Adicionando log de erro
+        res.status(500).send({ error: error.message });
     }
 };

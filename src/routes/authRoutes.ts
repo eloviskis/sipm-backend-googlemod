@@ -4,8 +4,18 @@ import { configureMFA, verifyMFA } from '../controllers/mfaController';
 import mfaMiddleware from '../middlewares/mfaMiddleware';
 import { forgotPassword } from '../controllers/authController';
 import { authMiddleware } from '../middlewares/authMiddleware';
+import { body, validationResult } from 'express-validator';
 
 const router = Router();
+
+// Função para lidar com validação de erros
+const handleValidationErrors = (req: any, res: any, next: any) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+};
 
 // Rota de autenticação com Google
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -41,9 +51,31 @@ router.get('/auth/linkedin/callback', passport.authenticate('linkedin', { failur
 );
 
 // Rotas para configurar e verificar MFA
-router.post('/auth/mfa/setup', authMiddleware, configureMFA);
-router.post('/auth/mfa/verify', authMiddleware, verifyMFA);
+router.post('/auth/mfa/setup', 
+    authMiddleware, 
+    [
+        body('phoneNumber').isMobilePhone().withMessage('Número de telefone inválido')
+    ], 
+    handleValidationErrors, 
+    configureMFA
+);
 
-router.post('/forgot-password', forgotPassword);
+router.post('/auth/mfa/verify', 
+    authMiddleware, 
+    [
+        body('token').isLength({ min: 6, max: 6 }).withMessage('Token MFA inválido')
+    ], 
+    handleValidationErrors, 
+    verifyMFA
+);
+
+// Rota para recuperação de senha
+router.post('/forgot-password', 
+    [
+        body('email').isEmail().withMessage('Email inválido')
+    ], 
+    handleValidationErrors, 
+    forgotPassword
+);
 
 export default router;

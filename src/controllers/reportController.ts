@@ -11,10 +11,25 @@ interface AuthRequest extends Request {
 const db = admin.firestore();
 const reportsCollection = db.collection('reports');
 
+// Função para validar dados do relatório
+const validateReportData = (report: any): void => {
+    if (!report.title || typeof report.title !== 'string') {
+        throw new Error('O título do relatório é obrigatório e deve ser uma string.');
+    }
+    if (!report.content || typeof report.content !== 'string') {
+        throw new Error('O conteúdo do relatório é obrigatório e deve ser uma string.');
+    }
+    // Adicione outras validações necessárias
+};
+
 // Função para criar um novo relatório
 export const createReport = async (req: AuthRequest, res: Response) => {
     try {
         const report = req.body;
+
+        // Validação dos dados do relatório
+        validateReportData(report);
+
         const docRef = await reportsCollection.add(report);
         const savedReport = await docRef.get();
 
@@ -28,9 +43,9 @@ export const createReport = async (req: AuthRequest, res: Response) => {
         }
 
         res.status(201).send({ id: docRef.id, ...savedReport.data() });
-    } catch (error) {
-        logger('error', 'Erro ao criar relatório:', error);
-        res.status(400).send(error);
+    } catch (error: any) {
+        logger('error', `Erro ao criar relatório: ${error.message}`);
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -40,9 +55,9 @@ export const getReports = async (req: Request, res: Response) => {
         const snapshot = await reportsCollection.get();
         const reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(reports);
-    } catch (error) {
-        logger('error', 'Erro ao obter relatórios:', error);
-        res.status(500).send(error);
+    } catch (error: any) {
+        logger('error', `Erro ao obter relatórios: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -52,11 +67,11 @@ export const getReport = async (req: Request, res: Response) => {
         const doc = await reportsCollection.doc(req.params.id).get();
         if (!doc.exists) {
             logger('error', `Relatório não encontrado: ${req.params.id}`);
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Relatório não encontrado' });
         }
         res.send({ id: doc.id, ...doc.data() });
-    } catch (error) {
-        logger('error', 'Erro ao obter relatório:', error);
-        res.status(500).send(error);
+    } catch (error: any) {
+        logger('error', `Erro ao obter relatório: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 };

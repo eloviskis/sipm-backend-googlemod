@@ -6,10 +6,25 @@ import { integrateWithLab, integrateWithMedicalDevices } from '../services/integ
 const db = admin.firestore();
 const patientRecordsCollection = db.collection('patientRecords');
 
+// Função para validar dados do prontuário do paciente
+const validatePatientRecord = (patientRecord: any): void => {
+    if (!patientRecord.name || typeof patientRecord.name !== 'string') {
+        throw new Error('O nome do paciente é obrigatório e deve ser uma string.');
+    }
+    if (!patientRecord.medicalHistory || !Array.isArray(patientRecord.medicalHistory)) {
+        throw new Error('O histórico médico é obrigatório e deve ser um array.');
+    }
+    // Adicione outras validações necessárias
+};
+
 // Função para criar um novo prontuário de paciente
 export const createPatientRecord = async (req: Request, res: Response) => {
     try {
         const patientRecord = req.body;
+
+        // Validação dos dados do prontuário
+        validatePatientRecord(patientRecord);
+
         const docRef = await patientRecordsCollection.add(patientRecord);
         const savedPatientRecord = await docRef.get();
 
@@ -19,13 +34,9 @@ export const createPatientRecord = async (req: Request, res: Response) => {
 
         logger.info(`Prontuário do paciente criado: ${docRef.id}`); // Adicionando log de criação de prontuário
         res.status(201).send({ id: docRef.id, ...savedPatientRecord.data() });
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Erro ao criar prontuário do paciente:', error); // Adicionando log de erro
-            res.status(400).send({ error: error.message });
-        } else {
-            res.status(400).send({ error: 'Erro desconhecido' });
-        }
+    } catch (error: any) {
+        logger.error(`Erro ao criar prontuário do paciente: ${error.message}`); // Adicionando log de erro
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -35,13 +46,9 @@ export const getPatientRecords = async (req: Request, res: Response) => {
         const snapshot = await patientRecordsCollection.get();
         const patientRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(patientRecords);
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Erro ao obter prontuários de pacientes:', error); // Adicionando log de erro
-            res.status(500).send({ error: error.message });
-        } else {
-            res.status(500).send({ error: 'Erro desconhecido' });
-        }
+    } catch (error: any) {
+        logger.error(`Erro ao obter prontuários de pacientes: ${error.message}`); // Adicionando log de erro
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -50,16 +57,13 @@ export const getPatientRecord = async (req: Request, res: Response) => {
     try {
         const doc = await patientRecordsCollection.doc(req.params.id).get();
         if (!doc.exists) {
-            return res.status(404).send();
+            logger.error(`Prontuário não encontrado: ${req.params.id}`); // Adicionando log de erro
+            return res.status(404).send({ error: 'Prontuário não encontrado' });
         }
         res.send({ id: doc.id, ...doc.data() });
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Erro ao obter prontuário do paciente:', error); // Adicionando log de erro
-            res.status(500).send({ error: error.message });
-        } else {
-            res.status(500).send({ error: 'Erro desconhecido' });
-        }
+    } catch (error: any) {
+        logger.error(`Erro ao obter prontuário do paciente: ${error.message}`); // Adicionando log de erro
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -77,7 +81,8 @@ export const updatePatientRecord = async (req: Request, res: Response) => {
         const docRef = patientRecordsCollection.doc(req.params.id);
         const doc = await docRef.get();
         if (!doc.exists) {
-            return res.status(404).send();
+            logger.error(`Prontuário não encontrado: ${req.params.id}`); // Adicionando log de erro
+            return res.status(404).send({ error: 'Prontuário não encontrado' });
         }
 
         const patientRecord = doc.data();
@@ -90,13 +95,9 @@ export const updatePatientRecord = async (req: Request, res: Response) => {
 
         logger.info(`Prontuário do paciente atualizado: ${docRef.id}`); // Adicionando log de atualização de prontuário
         res.send({ id: docRef.id, ...patientRecord });
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Erro ao atualizar prontuário do paciente:', error); // Adicionando log de erro
-            res.status(400).send({ error: error.message });
-        } else {
-            res.status(400).send({ error: 'Erro desconhecido' });
-        }
+    } catch (error: any) {
+        logger.error(`Erro ao atualizar prontuário do paciente: ${error.message}`); // Adicionando log de erro
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -106,18 +107,15 @@ export const deletePatientRecord = async (req: Request, res: Response) => {
         const docRef = patientRecordsCollection.doc(req.params.id);
         const doc = await docRef.get();
         if (!doc.exists) {
-            return res.status(404).send();
+            logger.error(`Prontuário não encontrado: ${req.params.id}`); // Adicionando log de erro
+            return res.status(404).send({ error: 'Prontuário não encontrado' });
         }
         await docRef.delete();
 
         logger.info(`Prontuário do paciente deletado: ${docRef.id}`); // Adicionando log de exclusão de prontuário
         res.send({ id: docRef.id, ...doc.data() });
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Erro ao deletar prontuário do paciente:', error); // Adicionando log de erro
-            res.status(500).send({ error: error.message });
-        } else {
-            res.status(500).send({ error: 'Erro desconhecido' });
-        }
+    } catch (error: any) {
+        logger.error(`Erro ao deletar prontuário do paciente: ${error.message}`); // Adicionando log de erro
+        res.status(500).send({ error: error.message });
     }
 };

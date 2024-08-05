@@ -7,10 +7,20 @@ import logger from '../middlewares/logger'; // Adicionando middleware de logger
 const db = admin.firestore();
 const appointmentsCollection = db.collection('appointments');
 
+// Função para validar dados de agendamento
+const validateAppointment = (appointment: any) => {
+    if (!appointment.email || !appointment.date) {
+        throw new Error('Os campos email e date são obrigatórios.');
+    }
+    // Adicione outras validações necessárias
+};
+
 // Função para criar um novo agendamento
 export const createAppointment = async (req: Request, res: Response) => {
     try {
         const appointment = req.body;
+        validateAppointment(appointment);
+
         const docRef = await appointmentsCollection.add(appointment);
         const savedAppointment = await docRef.get();
 
@@ -22,9 +32,9 @@ export const createAppointment = async (req: Request, res: Response) => {
 
         logger('info', `Agendamento criado: ${docRef.id}`); // Adicionando log de criação de agendamento
         res.status(201).send({ id: docRef.id, ...savedAppointment.data() });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao criar agendamento:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -34,9 +44,9 @@ export const getAppointments = async (req: Request, res: Response) => {
         const snapshot = await appointmentsCollection.get();
         const appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(appointments);
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao obter agendamentos:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -46,12 +56,12 @@ export const getAppointment = async (req: Request, res: Response) => {
         const doc = await appointmentsCollection.doc(req.params.id).get();
         if (!doc.exists) {
             logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Agendamento não encontrado.' });
         }
         res.send({ id: doc.id, ...doc.data() });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao obter agendamento:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -70,7 +80,7 @@ export const updateAppointment = async (req: Request, res: Response) => {
         const doc = await docRef.get();
         if (!doc.exists) {
             logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Agendamento não encontrado.' });
         }
 
         const appointment = doc.data();
@@ -79,9 +89,9 @@ export const updateAppointment = async (req: Request, res: Response) => {
 
         logger('info', `Agendamento atualizado: ${docRef.id}`); // Adicionando log de atualização de agendamento
         res.send({ id: docRef.id, ...appointment });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao atualizar agendamento:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: error.message });
     }
 };
 
@@ -92,15 +102,15 @@ export const deleteAppointment = async (req: Request, res: Response) => {
         const doc = await docRef.get();
         if (!doc.exists) {
             logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Agendamento não encontrado.' });
         }
         await docRef.delete();
 
         logger('info', `Agendamento deletado: ${docRef.id}`); // Adicionando log de exclusão de agendamento
         res.send({ id: docRef.id, ...doc.data() });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao deletar agendamento:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 };
 
@@ -110,14 +120,14 @@ export const sendReminder = async (req: Request, res: Response) => {
         const doc = await appointmentsCollection.doc(req.params.id).get();
         if (!doc.exists) {
             logger('error', `Agendamento não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Agendamento não encontrado.' });
         }
         const appointment = doc.data();
         await sendAppointmentReminder(req.body.email, appointment!.date);
         logger('info', `Lembrete enviado para o agendamento: ${doc.id}`); // Adicionando log de envio de lembrete
         res.send({ message: 'Lembrete enviado com sucesso' });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', 'Erro ao enviar lembrete:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 };

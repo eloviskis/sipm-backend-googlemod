@@ -17,9 +17,12 @@ export const getPrivacyPolicy = async (req: Request, res: Response) => {
         }
 
         res.setHeader('Content-Type', 'text/html');
-        file.createReadStream().pipe(res);
-    } catch (error) {
-        logger('error', 'Erro ao obter a política de privacidade:', error);
+        file.createReadStream().on('error', (err) => {
+            logger('error', `Erro ao ler o arquivo de política de privacidade: ${err.message}`);
+            res.status(500).send({ error: 'Erro ao ler o arquivo de política de privacidade' });
+        }).pipe(res);
+    } catch (error: any) {
+        logger('error', `Erro ao obter a política de privacidade: ${error.message}`);
         res.status(500).send({ error: 'Erro ao obter a política de privacidade' });
     }
 };
@@ -36,9 +39,12 @@ export const getTermsOfService = async (req: Request, res: Response) => {
         }
 
         res.setHeader('Content-Type', 'text/html');
-        file.createReadStream().pipe(res);
-    } catch (error) {
-        logger('error', 'Erro ao obter os termos de serviço:', error);
+        file.createReadStream().on('error', (err) => {
+            logger('error', `Erro ao ler o arquivo de termos de serviço: ${err.message}`);
+            res.status(500).send({ error: 'Erro ao ler o arquivo de termos de serviço' });
+        }).pipe(res);
+    } catch (error: any) {
+        logger('error', `Erro ao obter os termos de serviço: ${error.message}`);
         res.status(500).send({ error: 'Erro ao obter os termos de serviço' });
     }
 };

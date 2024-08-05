@@ -8,9 +8,19 @@ import admin from 'firebase-admin';
 const storage = new Storage();
 const bucket = storage.bucket(process.env.GCLOUD_STORAGE_BUCKET || 'your-bucket-name');
 
+// Tipos de arquivos permitidos para upload
+const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+
 // Configuração do Multer para armazenamento local temporário
 const upload = multer({
-    storage: multer.memoryStorage()
+    storage: multer.memoryStorage(),
+    fileFilter: (req, file, cb) => {
+        if (allowedMimeTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Tipo de arquivo não permitido'));
+        }
+    }
 });
 
 export const uploadMiddleware = upload.single('file');
@@ -49,7 +59,7 @@ export const downloadFile = async (req: Request, res: Response) => {
         await file.download({ destination: path.join('/tmp', fileName) });
         logger('info', `Arquivo baixado: ${fileName}`); // Adicionando log de sucesso
         res.download(path.join('/tmp', fileName));
-    } catch (error) {
+    } catch (error: any) {
         logger('error', `Arquivo não encontrado: ${fileName}`); // Adicionando log de erro
         res.status(404).send({ message: 'Arquivo não encontrado' });
     }
@@ -64,7 +74,7 @@ export const deleteFile = async (req: Request, res: Response) => {
         await file.delete();
         logger('info', `Arquivo deletado: ${fileName}`); // Adicionando log de sucesso
         res.status(200).send({ message: 'Arquivo deletado com sucesso' });
-    } catch (error) {
+    } catch (error: any) {
         logger('error', `Erro ao deletar arquivo: ${error.message}`); // Adicionando log de erro
         res.status(500).send({ message: 'Erro ao deletar arquivo' });
     }

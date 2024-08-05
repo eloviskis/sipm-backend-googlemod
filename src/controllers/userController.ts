@@ -15,6 +15,16 @@ export const createUser = async (req: Request, res: Response) => {
             return res.status(400).send({ error: 'O consentimento do usuário é obrigatório para o processamento de dados.' });
         }
 
+        if (!email || !password || !name) {
+            return res.status(400).send({ error: 'Nome, email e senha são obrigatórios.' });
+        }
+
+        // Validar o formato do email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).send({ error: 'Email inválido.' });
+        }
+
         // Criptografar a senha antes de salvar
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -26,7 +36,7 @@ export const createUser = async (req: Request, res: Response) => {
         res.status(201).send({ id: docRef.id, ...savedUser.data() });
     } catch (error) {
         logger('error', 'Erro ao criar usuário:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: 'Erro ao criar usuário. Verifique os dados fornecidos.' });
     }
 };
 
@@ -45,7 +55,7 @@ export const updateUser = async (req: Request, res: Response) => {
         const doc = await docRef.get();
         if (!doc.exists) {
             logger('error', `Usuário não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Usuário não encontrado.' });
         }
 
         const user = doc.data();
@@ -62,7 +72,7 @@ export const updateUser = async (req: Request, res: Response) => {
         res.send({ id: docRef.id, ...user });
     } catch (error) {
         logger('error', 'Erro ao atualizar usuário:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: 'Erro ao atualizar usuário. Verifique os dados fornecidos.' });
     }
 };
 
@@ -73,7 +83,7 @@ export const deleteUser = async (req: Request, res: Response) => {
         const doc = await docRef.get();
         if (!doc.exists) {
             logger('error', `Usuário não encontrado: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Usuário não encontrado.' });
         }
         await docRef.delete();
 
@@ -81,6 +91,6 @@ export const deleteUser = async (req: Request, res: Response) => {
         res.send({ message: 'Usuário deletado com sucesso.' });
     } catch (error) {
         logger('error', 'Erro ao deletar usuário:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: 'Erro ao deletar usuário. Tente novamente mais tarde.' });
     }
 };

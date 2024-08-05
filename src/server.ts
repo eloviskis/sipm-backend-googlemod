@@ -19,6 +19,7 @@ import themePreferencesRoutes from './routes/themePreferencesRoutes';
 import themeRoutes from './routes/themeRoutes';
 import userRoutes from './routes/userRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
+import customizationRoutes from './routes/customization'; // Adicionando a rota de customização
 import logger from './middlewares/logger'; // Adicionando logger
 import { ensureHttps } from './middlewares/httpsRedirect'; // Adicionando redirecionamento HTTPS
 
@@ -62,6 +63,10 @@ app.use('/api/theme-preferences', themePreferencesRoutes);
 app.use('/api/themes', themeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/customization', customizationRoutes); // Adicionando a rota de customização
+
+// Middleware para servir arquivos estáticos (ex.: favicon)
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Rota básica
 app.get('/', (req, res) => {

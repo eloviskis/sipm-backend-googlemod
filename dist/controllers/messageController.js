@@ -13,19 +13,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMessages = exports.sendMessage = void 0;
-const message_1 = __importDefault(require("../models/message"));
-const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const messagesCollection = db.collection('messages');
+// Função para validar dados da mensagem
+const validateMessageData = (message) => {
+    if (!message.to || typeof message.to !== 'string') {
+        throw new Error('O destinatário da mensagem é obrigatório e deve ser uma string.');
+    }
+    if (!message.content || typeof message.content !== 'string') {
+        throw new Error('O conteúdo da mensagem é obrigatório e deve ser uma string.');
+    }
+    // Adicione outras validações necessárias
+};
 // Função para enviar uma mensagem
 const sendMessage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const message = new message_1.default(req.body);
-        const savedMessage = yield message.save();
-        (0, logger_1.default)('info', `Mensagem enviada: ${savedMessage._id}`); // Adicionando log de envio de mensagem
-        res.status(201).send(savedMessage);
+        const message = req.body;
+        // Validação dos dados da mensagem
+        validateMessageData(message);
+        const docRef = yield messagesCollection.add(message);
+        const savedMessage = yield docRef.get();
+        (0, logger_1.default)('info', `Mensagem enviada: ${docRef.id}`);
+        res.status(201).send(Object.assign({ id: docRef.id }, savedMessage.data()));
     }
     catch (error) {
-        (0, logger_1.default)('error', 'Erro ao enviar mensagem:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        (0, logger_1.default)('error', `Erro ao enviar mensagem: ${error.message}`);
+        res.status(400).send({ error: error.message });
     }
 });
 exports.sendMessage = sendMessage;
@@ -40,13 +55,14 @@ const getMessages = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (req.user._id !== userId) {
             return res.status(403).send({ error: 'Acesso negado' });
         }
-        const messages = yield message_1.default.find({ to: userId });
-        (0, logger_1.default)('info', `Mensagens obtidas para o usuário: ${userId}`); // Adicionando log de obtenção de mensagens
+        const snapshot = yield messagesCollection.where('to', '==', userId).get();
+        const messages = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
+        (0, logger_1.default)('info', `Mensagens obtidas para o usuário: ${userId}`);
         res.send(messages);
     }
     catch (error) {
-        (0, logger_1.default)('error', 'Erro ao obter mensagens:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        (0, logger_1.default)('error', `Erro ao obter mensagens: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.getMessages = getMessages;

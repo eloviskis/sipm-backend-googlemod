@@ -12,48 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.forgotPassword = void 0;
-const userModel_1 = __importDefault(require("../models/userModel"));
-const nodemailer_1 = __importDefault(require("nodemailer"));
-const crypto_1 = __importDefault(require("crypto"));
-const transporter = nodemailer_1.default.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
-const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email } = req.body;
+exports.authMiddleware = void 0;
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const idToken = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split('Bearer ')[1];
+    if (!idToken) {
+        return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+    }
     try {
-        const user = yield userModel_1.default.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'Usuário não encontrado' });
-        }
-        const token = crypto_1.default.randomBytes(20).toString('hex');
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
-        yield user.save();
-        const mailOptions = {
-            to: user.email,
-            from: process.env.EMAIL_USER,
-            subject: 'Redefinição de senha',
-            text: `Você está recebendo este e-mail porque você (ou alguém) solicitou a redefinição da senha da sua conta.\n\n` +
-                `Por favor, clique no link a seguir, ou cole-o em seu navegador para concluir o processo:\n\n` +
-                `http://${req.headers.host}/reset/${token}\n\n` +
-                `Se você não solicitou isso, por favor, ignore este e-mail e sua senha permanecerá inalterada.\n`,
-        };
-        transporter.sendMail(mailOptions, (err, response) => {
-            if (err) {
-                console.error('Erro ao enviar e-mail:', err);
-                return res.status(500).json({ message: 'Erro ao enviar e-mail' });
-            }
-            res.status(200).json({ message: 'E-mail de redefinição de senha enviado com sucesso' });
-        });
+        const decodedToken = yield firebase_admin_1.default.auth().verifyIdToken(idToken);
+        req.user = { id: decodedToken.uid };
+        next();
     }
     catch (error) {
-        console.error('Erro ao processar solicitação de redefinição de senha:', error);
-        res.status(500).json({ message: 'Erro ao processar solicitação de redefinição de senha' });
+        return res.status(401).json({ error: 'Token de autenticação inválido' });
     }
 });
-exports.forgotPassword = forgotPassword;
+exports.authMiddleware = authMiddleware;

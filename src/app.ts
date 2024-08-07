@@ -1,7 +1,6 @@
 import * as passport from 'passport';
 import express from 'express';
 import session from 'express-session';
-import { initialize } from 'passport';
 import userRoutes from './routes/userRoutes';
 import appointmentRoutes from './routes/appointmentRoutes';
 import authRoutes from './routes/authRoutes';
@@ -38,10 +37,6 @@ const sslOptions = {
     cert: fs.readFileSync(path.resolve(__dirname, '../certs/server.cert'))
 };  
 
-https.createServer(sslOptions, app).listen(3001, () => {
-    console.log('Servidor HTTPS rodando na porta 3001');
-});
-
 if (process.env.NODE_ENV === 'production') {
     app.use(ensureHttps);
 }
@@ -64,7 +59,7 @@ app.use(session({
     }
 }));
 
-app.use(initialize());
+app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(mfaMiddleware);
@@ -94,6 +89,10 @@ app.use(errorHandler);
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send('Olá mundo HTTPS!');
+});
+
+https.createServer(sslOptions, app).listen(3001, () => {
+    console.log('Servidor HTTPS rodando na porta 3001');
 });
 
 export default app;

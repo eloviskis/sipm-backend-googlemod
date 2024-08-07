@@ -6,13 +6,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyMfaToken = exports.generateQrCode = exports.generateMfaSecret = void 0;
 const speakeasy_1 = __importDefault(require("speakeasy"));
 const qrcode_1 = __importDefault(require("qrcode"));
-// Função para gerar um segredo TOTP
+/**
+ * Função para gerar um segredo TOTP
+ * @returns {speakeasy.GeneratedSecret} - O segredo TOTP gerado
+ */
 const generateMfaSecret = () => {
     const secret = speakeasy_1.default.generateSecret({ length: 20 });
     return secret;
 };
 exports.generateMfaSecret = generateMfaSecret;
-// Função para gerar um QR Code para o segredo TOTP
+/**
+ * Função para gerar um QR Code para o segredo TOTP
+ * @param {string} otpauthUrl - A URL OTP Auth
+ * @returns {Promise<string>} - Uma promessa que resolve com o URL do QR Code gerado
+ */
 const generateQrCode = (otpauthUrl) => {
     return new Promise((resolve, reject) => {
         qrcode_1.default.toDataURL(otpauthUrl, (err, data_url) => {
@@ -26,7 +33,12 @@ const generateQrCode = (otpauthUrl) => {
     });
 };
 exports.generateQrCode = generateQrCode;
-// Função para verificar o token TOTP
+/**
+ * Função para verificar o token TOTP
+ * @param {string} secret - O segredo TOTP
+ * @param {string} token - O token TOTP
+ * @returns {boolean} - Retorna true se o token for válido, false caso contrário
+ */
 const verifyMfaToken = (secret, token) => {
     return speakeasy_1.default.totp.verify({
         secret: secret,

@@ -17,9 +17,17 @@ const oAuth2Client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_C
 oAuth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
 });
+// Função para validar os dados do agendamento
+const validateAppointment = (appointment) => {
+    if (!appointment.date) {
+        throw new Error('A data do agendamento é obrigatória.');
+    }
+    // Adicione outras validações necessárias
+};
 // Função para integrar com Google Calendar
 const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, void 0, function* () {
-    const calendar = googleapis_1.google.calendar('v3');
+    validateAppointment(appointment);
+    const calendar = googleapis_1.google.calendar({ version: 'v3', auth: oAuth2Client });
     const event = {
         summary: 'Consulta Médica',
         description: 'Descrição da consulta',
@@ -51,6 +59,7 @@ const integrateWithGoogleCalendar = (appointment) => __awaiter(void 0, void 0, v
         else {
             console.error('Erro desconhecido ao criar evento no Google Calendar');
         }
+        throw error; // Re-throw the error after logging it
     }
 });
 exports.integrateWithGoogleCalendar = integrateWithGoogleCalendar;

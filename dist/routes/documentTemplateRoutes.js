@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const documentTemplateController_1 = require("../controllers/documentTemplateController");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
 const router = (0, express_1.Router)();
-router.post('/document-templates', documentTemplateController_1.createDocumentTemplate);
-router.get('/document-templates', documentTemplateController_1.getDocumentTemplates);
-router.get('/document-templates/:id', documentTemplateController_1.getDocumentTemplate);
-router.patch('/document-templates/:id', documentTemplateController_1.updateDocumentTemplate);
-router.delete('/document-templates/:id', documentTemplateController_1.deleteDocumentTemplate);
+router.post('/document-templates', authMiddleware_1.authMiddleware, (0, authMiddleware_1.permissionMiddleware)('ManageDocumentTemplates'), documentTemplateController_1.createDocumentTemplate);
+router.get('/document-templates', authMiddleware_1.authMiddleware, (0, authMiddleware_1.permissionMiddleware)('ViewDocumentTemplates'), documentTemplateController_1.getDocumentTemplates);
+router.get('/document-templates/:id', authMiddleware_1.authMiddleware, (0, authMiddleware_1.permissionMiddleware)('ViewDocumentTemplates'), documentTemplateController_1.getDocumentTemplate);
+router.patch('/document-templates/:id', authMiddleware_1.authMiddleware, (0, authMiddleware_1.permissionMiddleware)('ManageDocumentTemplates'), documentTemplateController_1.updateDocumentTemplate);
+router.delete('/document-templates/:id', authMiddleware_1.authMiddleware, (0, authMiddleware_1.permissionMiddleware)('ManageDocumentTemplates'), documentTemplateController_1.deleteDocumentTemplate);
 exports.default = router;

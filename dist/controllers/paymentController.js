@@ -13,70 +13,92 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deletePayment = exports.getPayment = exports.getPayments = exports.createPayment = void 0;
-const payment_1 = __importDefault(require("../models/payment"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const paymentService_1 = require("../services/paymentService");
+const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const paymentsCollection = db.collection('payments');
+// Função para validar detalhes do pagamento
+const validatePaymentDetails = (paymentDetails) => {
+    if (!paymentDetails.amount || typeof paymentDetails.amount !== 'number') {
+        throw new Error('O valor do pagamento é obrigatório e deve ser um número.');
+    }
+    if (!paymentDetails.method || typeof paymentDetails.method !== 'string') {
+        throw new Error('O método de pagamento é obrigatório e deve ser uma string.');
+    }
+    // Adicione outras validações necessárias
+};
 // Função para processar um pagamento
 const createPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const paymentDetails = req.body;
+        // Validação dos detalhes do pagamento
+        validatePaymentDetails(paymentDetails);
         const paymentResult = yield (0, paymentService_1.processPayment)(paymentDetails);
         if (paymentResult.success) {
-            const payment = new payment_1.default(paymentResult.data);
-            yield payment.save();
-            const invoice = yield (0, paymentService_1.generateInvoice)(payment);
-            console.info(`Pagamento processado: ${payment._id}`); // Uso correto do console.info
-            res.status(201).send({ payment, invoice });
+            const payment = paymentResult.data;
+            const docRef = yield paymentsCollection.add(payment);
+            const savedPayment = yield docRef.get();
+            const invoice = yield (0, paymentService_1.generateInvoice)(savedPayment.data());
+            (0, logger_1.default)('info', `Pagamento processado: ${docRef.id}`);
+            res.status(201).send({ payment: Object.assign({ id: docRef.id }, savedPayment.data()), invoice });
         }
         else {
+            (0, logger_1.default)('error', `Erro ao processar pagamento: ${paymentResult.error}`);
             res.status(400).send({ error: paymentResult.error });
         }
     }
     catch (error) {
-        console.error('Erro ao processar pagamento:', error); // Uso correto do console.error
-        res.status(500).send(error);
+        (0, logger_1.default)('error', `Erro ao processar pagamento: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.createPayment = createPayment;
 // Função para obter todos os pagamentos
 const getPayments = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const payments = yield payment_1.default.find({});
+        const snapshot = yield paymentsCollection.get();
+        const payments = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(payments);
     }
     catch (error) {
-        console.error('Erro ao obter pagamentos:', error); // Uso correto do console.error
-        res.status(500).send(error);
+        (0, logger_1.default)('error', `Erro ao obter pagamentos: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.getPayments = getPayments;
 // Função para obter um pagamento específico
 const getPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const payment = yield payment_1.default.findById(req.params.id);
-        if (!payment) {
-            return res.status(404).send();
+        const doc = yield paymentsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
+            (0, logger_1.default)('error', `Pagamento não encontrado: ${req.params.id}`);
+            return res.status(404).send({ error: 'Pagamento não encontrado' });
         }
-        res.send(payment);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
-        console.error('Erro ao obter pagamento:', error); // Uso correto do console.error
-        res.status(500).send(error);
+        (0, logger_1.default)('error', `Erro ao obter pagamento: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.getPayment = getPayment;
 // Função para deletar um pagamento
 const deletePayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const payment = yield payment_1.default.findByIdAndDelete(req.params.id);
-        if (!payment) {
-            return res.status(404).send();
+        const docRef = paymentsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
+            (0, logger_1.default)('error', `Pagamento não encontrado: ${req.params.id}`);
+            return res.status(404).send({ error: 'Pagamento não encontrado' });
         }
-        console.info(`Pagamento deletado: ${payment._id}`); // Uso correto do console.info
-        res.send(payment);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Pagamento deletado: ${docRef.id}`);
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
-        console.error('Erro ao deletar pagamento:', error); // Uso correto do console.error
-        res.status(500).send(error);
+        (0, logger_1.default)('error', `Erro ao deletar pagamento: ${error.message}`);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.deletePayment = deletePayment;

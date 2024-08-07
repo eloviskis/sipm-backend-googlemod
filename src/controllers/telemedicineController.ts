@@ -6,6 +6,12 @@ import logger from '../middlewares/logger'; // Adicionando middleware de logger
 const db = admin.firestore();
 const videoRoomsCollection = db.collection('videoRooms');
 
+// Definir a interface correta para o retorno da função createVideoRoom
+interface VideoRoom {
+    sid: string;
+    [key: string]: any;
+}
+
 // Função para validar dados da sala de videoconferência
 const validateRoomData = (roomName: string): void => {
     if (!roomName || typeof roomName !== 'string') {
@@ -28,12 +34,12 @@ export const createRoom = async (req: Request, res: Response) => {
         // Validação dos dados da sala de videoconferência
         validateRoomData(roomName);
 
-        const room = await createVideoRoom(roomName);
+        const room: VideoRoom = await createVideoRoom(roomName) as VideoRoom;
 
         // Salvar metadados da sala de videoconferência no Firestore
         const roomData = {
             roomName,
-            sid: room.sid,
+            sid: room.sid, // Certifique-se de que 'sid' está presente
             dateCreated: admin.firestore.FieldValue.serverTimestamp(),
         };
         const docRef = await videoRoomsCollection.add(roomData);

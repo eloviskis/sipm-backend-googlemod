@@ -18,14 +18,22 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const transporter = nodemailer_1.default.createTransport({
     service: 'Gmail',
     auth: {
-        user: process.env.GMAIL_USER || 'default_gmail_user',
-        pass: process.env.GMAIL_PASS || 'default_gmail_pass',
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
     },
 });
+// Função para validar email
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new Error('Email inválido.');
+    }
+};
 // Função para enviar confirmação de agendamento
 const sendAppointmentConfirmation = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
+    validateEmail(email);
     const mailOptions = {
-        from: process.env.GMAIL_USER || 'default_gmail_user',
+        from: process.env.GMAIL_USER,
         to: email,
         subject: 'Confirmação de Agendamento',
         text: `Sua consulta foi agendada para ${date}.`,
@@ -35,14 +43,21 @@ const sendAppointmentConfirmation = (email, date) => __awaiter(void 0, void 0, v
         console.log(`Email de confirmação enviado: ${info.response}`);
     }
     catch (error) {
-        console.error(`Erro ao enviar email de confirmação: ${error.message}`);
+        if (error instanceof Error) {
+            console.error(`Erro ao enviar email de confirmação: ${error.message}`);
+        }
+        else {
+            console.error('Erro desconhecido ao enviar email de confirmação');
+        }
+        throw error; // Re-throw the error after logging it
     }
 });
 exports.sendAppointmentConfirmation = sendAppointmentConfirmation;
 // Função para enviar lembrete de agendamento
 const sendAppointmentReminder = (email, date) => __awaiter(void 0, void 0, void 0, function* () {
+    validateEmail(email);
     const mailOptions = {
-        from: process.env.GMAIL_USER || 'default_gmail_user',
+        from: process.env.GMAIL_USER,
         to: email,
         subject: 'Lembrete de Agendamento',
         text: `Lembrete: Sua consulta está agendada para ${date}.`,
@@ -52,7 +67,13 @@ const sendAppointmentReminder = (email, date) => __awaiter(void 0, void 0, void 
         console.log(`Email de lembrete enviado: ${info.response}`);
     }
     catch (error) {
-        console.error(`Erro ao enviar email de lembrete: ${error.message}`);
+        if (error instanceof Error) {
+            console.error(`Erro ao enviar email de lembrete: ${error.message}`);
+        }
+        else {
+            console.error('Erro desconhecido ao enviar email de lembrete');
+        }
+        throw error; // Re-throw the error after logging it
     }
 });
 exports.sendAppointmentReminder = sendAppointmentReminder;

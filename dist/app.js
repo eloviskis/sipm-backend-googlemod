@@ -1,11 +1,34 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const passport = __importStar(require("passport"));
 const express_1 = __importDefault(require("express"));
 const express_session_1 = __importDefault(require("express-session"));
-const passport_1 = __importDefault(require("./config/passport"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const appointmentRoutes_1 = __importDefault(require("./routes/appointmentRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
@@ -38,9 +61,6 @@ const sslOptions = {
     key: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.key')),
     cert: fs_1.default.readFileSync(path_1.default.resolve(__dirname, '../certs/server.cert'))
 };
-https_1.default.createServer(sslOptions, app).listen(3001, () => {
-    console.log('Servidor HTTPS rodando na porta 3001');
-});
 if (process.env.NODE_ENV === 'production') {
     app.use(httpsRedirect_1.ensureHttps);
 }
@@ -59,32 +79,35 @@ app.use((0, express_session_1.default)({
         maxAge: 24 * 60 * 60 * 1000,
     }
 }));
-app.use(passport_1.default.initialize());
-app.use(passport_1.default.session());
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(mfaMiddleware_1.default);
 app.use('/api/auth', authRoutes_1.default);
 app.use(authMiddleware_1.authMiddleware);
-app.use('/api', userRoutes_1.default);
-app.use('/api', appointmentRoutes_1.default);
-app.use('/api', clinicRoutes_1.default);
-app.use('/api', fileRoutes_1.default);
-app.use('/api', pageRoutes_1.default);
-app.use('/api', themeRoutes_1.default);
-app.use('/api', patientRecordRoutes_1.default);
-app.use('/api', invoiceRoutes_1.default);
-app.use('/api', messageRoutes_1.default);
-app.use('/api', reportRoutes_1.default);
-app.use('/api', whatsappRoutes_1.default);
-app.use('/api', themePreferencesRoutes_1.default);
-app.use('/api', paymentRoutes_1.default);
-app.use('/api', documentTemplateRoutes_1.default); // Adicionar nova rota
-app.use('/api', preConsultationRoutes_1.default); // Adicionar nova rota
-app.use('/api', motivoRoutes_1.default); // Adicionar nova rota
-app.use('/api', accountsReceivableRoutes_1.default);
-app.use('/api', accountsPayableRoutes_1.default);
+app.use('/api/users', userRoutes_1.default);
+app.use('/api/appointments', appointmentRoutes_1.default);
+app.use('/api/clinics', clinicRoutes_1.default);
+app.use('/api/files', fileRoutes_1.default);
+app.use('/api/pages', pageRoutes_1.default);
+app.use('/api/themes', themeRoutes_1.default);
+app.use('/api/patient-records', patientRecordRoutes_1.default);
+app.use('/api/invoices', invoiceRoutes_1.default);
+app.use('/api/messages', messageRoutes_1.default);
+app.use('/api/reports', reportRoutes_1.default);
+app.use('/api/whatsapp', whatsappRoutes_1.default);
+app.use('/api/theme-preferences', themePreferencesRoutes_1.default);
+app.use('/api/payments', paymentRoutes_1.default);
+app.use('/api/document-templates', documentTemplateRoutes_1.default); // Adicionar nova rota
+app.use('/api/pre-consultations', preConsultationRoutes_1.default); // Adicionar nova rota
+app.use('/api/motivos', motivoRoutes_1.default); // Adicionar nova rota
+app.use('/api/accounts-receivable', accountsReceivableRoutes_1.default);
+app.use('/api/accounts-payable', accountsPayableRoutes_1.default);
 app.use(errorHandler_1.errorHandler);
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.send('Olá mundo HTTPS!');
+});
+https_1.default.createServer(sslOptions, app).listen(3001, () => {
+    console.log('Servidor HTTPS rodando na porta 3001');
 });
 exports.default = app;

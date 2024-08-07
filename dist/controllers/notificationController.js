@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteNotification = exports.getNotification = exports.getNotifications = exports.createNotification = void 0;
-const notification_1 = __importDefault(require("../models/notification"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+const notificationsCollection = db.collection('notifications');
 // Função para criar uma nova notificação
 const createNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const notification = new notification_1.default(req.body);
-        const savedNotification = yield notification.save();
-        (0, logger_1.default)('info', `Notificação criada: ${savedNotification._id}`); // Adicionando log de criação de notificação
-        res.status(201).send(savedNotification);
+        const notification = req.body;
+        const docRef = yield notificationsCollection.add(notification);
+        const savedNotification = yield docRef.get();
+        (0, logger_1.default)('info', `Notificação criada: ${docRef.id}`); // Adicionando log de criação de notificação
+        res.status(201).send(Object.assign({ id: docRef.id }, savedNotification.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar notificação:', error); // Adicionando log de erro
@@ -32,7 +35,8 @@ exports.createNotification = createNotification;
 // Função para obter todas as notificações
 const getNotifications = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const notifications = yield notification_1.default.find({});
+        const snapshot = yield notificationsCollection.get();
+        const notifications = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(notifications);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getNotifications = getNotifications;
 // Função para obter uma notificação específica
 const getNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const notification = yield notification_1.default.findById(req.params.id);
-        if (!notification) {
+        const doc = yield notificationsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Notificação não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(notification);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter notificação:', error); // Adicionando log de erro
@@ -60,13 +64,15 @@ exports.getNotification = getNotification;
 // Função para deletar uma notificação específica
 const deleteNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const notification = yield notification_1.default.findByIdAndDelete(req.params.id);
-        if (!notification) {
+        const docRef = notificationsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Notificação não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Notificação deletada: ${notification._id}`); // Adicionando log de deleção de notificação
-        res.send(notification);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Notificação deletada: ${docRef.id}`); // Adicionando log de deleção de notificação
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar notificação:', error); // Adicionando log de erro

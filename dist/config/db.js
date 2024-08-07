@@ -12,21 +12,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const logger_1 = __importDefault(require("../middlewares/logger"));
 const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sipm';
+    const serviceAccount = require('./serviceAccountKeyGFire.json');
+    firebase_admin_1.default.initializeApp({
+        credential: firebase_admin_1.default.credential.cert(serviceAccount)
+    });
+    const db = firebase_admin_1.default.firestore();
     try {
-        yield mongoose_1.default.connect(mongoURI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true,
-            useFindAndModify: false,
-        });
-        (0, logger_1.default)('info', 'Conexão com o MongoDB estabelecida com sucesso');
+        yield db.settings({ timestampsInSnapshots: true });
+        (0, logger_1.default)('info', 'Conexão com o Firestore estabelecida com sucesso');
     }
     catch (error) {
-        (0, logger_1.default)('error', 'Erro ao conectar ao MongoDB:', error);
+        (0, logger_1.default)('error', 'Erro ao conectar ao Firestore:', error);
         process.exit(1);
     }
 });

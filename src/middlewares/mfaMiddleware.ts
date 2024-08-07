@@ -1,12 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import speakeasy from 'speakeasy';
 import admin from 'firebase-admin';
-import logger from '../middlewares/logger'; // Adicionando middleware de logger
+import logger from '../middlewares/logger';
+import { IUser } from '../models/user';
+
+interface AuthRequest extends Request {
+    user?: IUser;
+}
 
 const db = admin.firestore();
 const usersCollection = db.collection('users');
 
-const mfaMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+const mfaMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (req.user) {
         try {
             const userDoc = await usersCollection.doc(req.user._id).get();
@@ -35,8 +40,8 @@ const mfaMiddleware = async (req: Request, res: Response, next: NextFunction) =>
                     return res.status(401).send({ error: 'Token MFA inválido' });
                 }
             }
-        } catch (error) {
-            logger('error', 'Erro ao verificar MFA:', error);
+        } catch (error: any) {
+            logger('error', `Erro ao verificar MFA: ${error.message}`);
             return res.status(500).send({ error: 'Erro interno do servidor' });
         }
     }

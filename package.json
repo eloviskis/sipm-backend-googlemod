@@ -7,7 +7,7 @@
     "prebuild": "npm run prebuild-unix || npm run prebuild-win",
     "prebuild-unix": "npm install -g typescript && chmod +x ./node_modules/.bin/tsc",
     "prebuild-win": "npm install -g typescript && if exist .\\node_modules\\.bin\\tsc (echo Skipping chmod for Windows)",
-    "start": "ts-node src/server.ts",
+    "start": "node dist/server.js",
     "build": "tsc",
     "test": "cross-env NODE_ENV=test npm run test:run",
     "test:run": "jest"

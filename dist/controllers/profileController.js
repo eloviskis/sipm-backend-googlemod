@@ -13,8 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateProfile = exports.getProfile = void 0;
-const user_1 = __importDefault(require("../models/user"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const usersCollection = db.collection('users');
 // Função para obter o perfil do usuário
 const getProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -22,14 +24,15 @@ const getProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             (0, logger_1.default)('error', 'Usuário não autenticado');
             return res.status(401).send({ error: 'Usuário não autenticado' });
         }
-        const userId = req.user._id;
-        const user = yield user_1.default.findById(userId);
-        if (!user) {
+        const userId = req.user.uid;
+        const doc = yield usersCollection.doc(userId).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Usuário não encontrado: ${userId}`);
             return res.status(404).send({ error: 'Usuário não encontrado' });
         }
+        const user = doc.data();
         (0, logger_1.default)('info', `Perfil obtido para o usuário: ${userId}`);
-        res.send({ name: user.name, email: user.email });
+        res.send({ name: user === null || user === void 0 ? void 0 : user.name, email: user === null || user === void 0 ? void 0 : user.email });
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter perfil do usuário:', error);
@@ -44,26 +47,28 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             (0, logger_1.default)('error', 'Usuário não autenticado');
             return res.status(401).send({ error: 'Usuário não autenticado' });
         }
-        const userId = req.user._id;
+        const userId = req.user.uid;
         const updates = Object.keys(req.body);
         const allowedUpdates = ['name', 'email'];
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
         if (!isValidOperation) {
             return res.status(400).send({ error: 'Atualizações inválidas!' });
         }
-        const user = yield user_1.default.findById(userId);
-        if (!user) {
+        const docRef = usersCollection.doc(userId);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Usuário não encontrado: ${userId}`);
             return res.status(404).send({ error: 'Usuário não encontrado' });
         }
+        const user = doc.data();
         updates.forEach((update) => {
-            if (update in user) {
+            if (user && update in user) {
                 user[update] = req.body[update];
             }
         });
-        yield user.save();
+        yield docRef.update(user);
         (0, logger_1.default)('info', `Perfil atualizado para o usuário: ${userId}`);
-        res.send({ name: user.name, email: user.email });
+        res.send({ name: user === null || user === void 0 ? void 0 : user.name, email: user === null || user === void 0 ? void 0 : user.email });
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar perfil do usuário:', error);

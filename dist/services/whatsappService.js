@@ -13,25 +13,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendWhatsAppMessage = void 0;
-const twilio_1 = require("twilio");
-const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM;
-const client = new twilio_1.Twilio(accountSid, authToken);
+const axios_1 = __importDefault(require("axios"));
+const whatsappApiUrl = process.env.WHATSAPP_API_URL || 'https://your-whatsapp-api-url.com/send-message';
+const apiToken = process.env.WHATSAPP_API_TOKEN || 'your_api_token';
 const sendWhatsAppMessage = (to, message) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const response = yield client.messages.create({
-            body: message,
-            from: `whatsapp:${fromWhatsAppNumber}`,
-            to: `whatsapp:${to}`,
+        const response = yield axios_1.default.post(whatsappApiUrl, {
+            to,
+            message,
+        }, {
+            headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json',
+            },
         });
-        (0, logger_1.default)('info', `Mensagem enviada para ${to}: ${response.sid}`); // Adicionando log de sucesso
-        return response;
+        if (response.status === 200) {
+            return response.data;
+        }
+        else {
+            throw new Error(`Erro ao enviar mensagem: ${response.statusText}`);
+        }
     }
     catch (error) {
-        (0, logger_1.default)('error', `Erro ao enviar mensagem para ${to}: ${error.message}`); // Adicionando log de erro
-        throw new Error(error.message);
+        throw new Error(`Erro ao enviar mensagem: ${error.message}`);
     }
 });
 exports.sendWhatsAppMessage = sendWhatsAppMessage;

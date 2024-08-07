@@ -13,7 +13,7 @@ export const getUserStats = async (req: Request, res: Response) => {
         logger('info', 'Estatísticas de usuários recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
-        logger('error', 'Erro ao recuperar estatísticas de usuários:', error);
+        logger('error', 'Erro ao recuperar estatísticas de usuários:', { error });
         res.status(500).send({ error: 'Erro ao recuperar estatísticas de usuários.' });
     }
 };
@@ -26,7 +26,7 @@ export const getReportStats = async (req: Request, res: Response) => {
         logger('info', 'Estatísticas de relatórios recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
-        logger('error', 'Erro ao recuperar estatísticas de relatórios:', error);
+        logger('error', 'Erro ao recuperar estatísticas de relatórios:', { error });
         res.status(500).send({ error: 'Erro ao recuperar estatísticas de relatórios.' });
     }
 };
@@ -39,7 +39,7 @@ export const getSettingsStats = async (req: Request, res: Response) => {
         logger('info', 'Estatísticas de configurações recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
-        logger('error', 'Erro ao recuperar estatísticas de configurações:', error);
+        logger('error', 'Erro ao recuperar estatísticas de configurações:', { error });
         res.status(500).send({ error: 'Erro ao recuperar estatísticas de configurações.' });
     }
 };
@@ -52,7 +52,7 @@ export const getNotificationStats = async (req: Request, res: Response) => {
         logger('info', 'Estatísticas de notificações recuperadas com sucesso.');
         res.status(200).send(stats);
     } catch (error) {
-        logger('error', 'Erro ao recuperar estatísticas de notificações:', error);
+        logger('error', 'Erro ao recuperar estatísticas de notificações:', { error });
         res.status(500).send({ error: 'Erro ao recuperar estatísticas de notificações.' });
     }
 };
@@ -70,13 +70,13 @@ export const addPermission = async (req: Request, res: Response) => {
         }
 
         const user = doc.data();
-        user.permissions = user.permissions ? [...user.permissions, permission] : [permission];
+        user.permissions = user?.permissions ? [...user.permissions, permission] : [permission];
         await docRef.update({ permissions: user.permissions });
         
         logger('info', `Permissão ${permission} adicionada ao usuário ${user.email}`);
         res.status(200).send({ message: 'Permission added successfully.', user });
     } catch (error) {
-        logger('error', 'Erro ao adicionar permissão:', error);
+        logger('error', 'Erro ao adicionar permissão:', { error });
         res.status(500).send({ error: 'Erro ao adicionar permissão.' });
     }
 };
@@ -94,13 +94,13 @@ export const removePermission = async (req: Request, res: Response) => {
         }
 
         const user = doc.data();
-        user.permissions = user.permissions ? user.permissions.filter((perm: string) => perm !== permission) : [];
+        user.permissions = user?.permissions ? user.permissions.filter((perm: string) => perm !== permission) : [];
         await docRef.update({ permissions: user.permissions });
         
         logger('info', `Permissão ${permission} removida do usuário ${user.email}`);
         res.status(200).send({ message: 'Permission removed successfully.', user });
     } catch (error) {
-        logger('error', 'Erro ao remover permissão:', error);
+        logger('error', 'Erro ao remover permissão:', { error });
         res.status(500).send({ error: 'Erro ao remover permissão.' });
     }
 };

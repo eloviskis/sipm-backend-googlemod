@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { createReport, getReports, getReport } from '../controllers/reportController';
-import { authMiddleware, permissionMiddleware } from '../middlewares/authMiddleware'; // Importar middlewares de autenticação e autorização
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
-// Adicionar middleware de autenticação e permissão para cada rota
-router.post('/reports', authMiddleware, permissionMiddleware('CreateReport'), createReport);
-router.get('/reports', authMiddleware, permissionMiddleware('ViewReports'), getReports);
-router.get('/reports/:id', authMiddleware, permissionMiddleware('ViewReport'), getReport);
+// Adicionar middleware de autenticação para cada rota
+router.post('/reports', authMiddleware, createReport);
+router.get('/reports', authMiddleware, getReports);
+router.get('/reports/:id', authMiddleware, getReport);
 
 export default router;

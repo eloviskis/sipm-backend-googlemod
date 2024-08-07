@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteAccountPayable = exports.updateAccountPayable = exports.getAccountPayable = exports.getAccountsPayable = exports.createAccountPayable = void 0;
-const accountsPayable_1 = __importDefault(require("../models/accountsPayable"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+const accountsPayableCollection = db.collection('accountsPayable');
 // Criar uma nova conta a pagar
 const createAccountPayable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountPayable = new accountsPayable_1.default(req.body);
-        const savedAccount = yield accountPayable.save();
-        (0, logger_1.default)('info', `Conta a pagar criada: ${savedAccount._id}`); // Adicionando log de criação
-        res.status(201).send(savedAccount);
+        const accountPayable = req.body;
+        const docRef = yield accountsPayableCollection.add(accountPayable);
+        const savedAccount = yield docRef.get();
+        (0, logger_1.default)('info', `Conta a pagar criada: ${docRef.id}`); // Adicionando log de criação
+        res.status(201).send(Object.assign({ id: docRef.id }, savedAccount.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar conta a pagar:', error); // Adicionando log de erro
@@ -32,7 +35,8 @@ exports.createAccountPayable = createAccountPayable;
 // Obter todas as contas a pagar
 const getAccountsPayable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountsPayable = yield accountsPayable_1.default.find({});
+        const snapshot = yield accountsPayableCollection.get();
+        const accountsPayable = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(accountsPayable);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getAccountsPayable = getAccountsPayable;
 // Obter uma conta a pagar específica
 const getAccountPayable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountPayable = yield accountsPayable_1.default.findById(req.params.id);
-        if (!accountPayable) {
+        const doc = yield accountsPayableCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(accountPayable);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter conta a pagar:', error); // Adicionando log de erro
@@ -66,15 +70,17 @@ const updateAccountPayable = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const accountPayable = yield accountsPayable_1.default.findById(req.params.id);
-        if (!accountPayable) {
+        const docRef = accountsPayableCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+        const accountPayable = doc.data();
         updates.forEach((update) => (accountPayable[update] = req.body[update]));
-        yield accountPayable.save();
-        (0, logger_1.default)('info', `Conta a pagar atualizada: ${accountPayable._id}`); // Adicionando log de atualização
-        res.send(accountPayable);
+        yield docRef.update(accountPayable);
+        (0, logger_1.default)('info', `Conta a pagar atualizada: ${docRef.id}`); // Adicionando log de atualização
+        res.send(Object.assign({ id: docRef.id }, accountPayable));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar conta a pagar:', error); // Adicionando log de erro
@@ -85,13 +91,15 @@ exports.updateAccountPayable = updateAccountPayable;
 // Deletar uma conta a pagar
 const deleteAccountPayable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountPayable = yield accountsPayable_1.default.findByIdAndDelete(req.params.id);
-        if (!accountPayable) {
+        const docRef = accountsPayableCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a pagar não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Conta a pagar deletada: ${accountPayable._id}`); // Adicionando log de deleção
-        res.send(accountPayable);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Conta a pagar deletada: ${req.params.id}`); // Adicionando log de deleção
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar conta a pagar:', error); // Adicionando log de erro

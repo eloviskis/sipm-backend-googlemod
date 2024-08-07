@@ -1,8 +1,10 @@
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
 import { sendMessage } from '../controllers/whatsappController';
+import { authMiddleware } from '../middlewares/authMiddleware'; // Adicionando middleware de autenticação
 
 const router = Router();
 
-router.post('/whatsapp/send', sendMessage);
+// Aplicar o middleware de autenticação à rota de envio de mensagem no WhatsApp
+router.post('/whatsapp/send', authMiddleware as RequestHandler, sendMessage);
 
 export default router;

@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteMotivo = exports.updateMotivo = exports.getMotivo = exports.getMotivos = exports.createMotivo = void 0;
-const motivo_1 = __importDefault(require("../models/motivo"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const motivosCollection = db.collection('motivos');
 // Criar um novo motivo
 const createMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const motivo = new motivo_1.default(req.body);
-        yield motivo.save();
-        (0, logger_1.default)('info', `Motivo criado: ${motivo._id}`);
-        res.status(201).send(motivo);
+        const motivo = req.body;
+        const docRef = yield motivosCollection.add(motivo);
+        const savedMotivo = yield docRef.get();
+        (0, logger_1.default)('info', `Motivo criado: ${docRef.id}`);
+        res.status(201).send(Object.assign({ id: docRef.id }, savedMotivo.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar motivo:', error);
@@ -32,7 +35,8 @@ exports.createMotivo = createMotivo;
 // Obter todos os motivos
 const getMotivos = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const motivos = yield motivo_1.default.find({});
+        const snapshot = yield motivosCollection.get();
+        const motivos = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(motivos);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getMotivos = getMotivos;
 // Obter um motivo específico
 const getMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const motivo = yield motivo_1.default.findById(req.params.id);
-        if (!motivo) {
+        const doc = yield motivosCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        res.send(motivo);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter motivo:', error);
@@ -57,7 +61,7 @@ const getMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getMotivo = getMotivo;
-// Atualizar um motivo específico (USANDO TYPE ASSERTION)
+// Atualizar um motivo específico
 const updateMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const updates = Object.keys(req.body);
     const allowedUpdates = ['name', 'description'];
@@ -66,17 +70,21 @@ const updateMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const motivo = yield motivo_1.default.findById(req.params.id);
-        if (!motivo) {
+        const docRef = motivosCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
+        const motivo = doc.data();
         updates.forEach((update) => {
-            motivo[update] = req.body[update]; // Use Type Assertion
+            if (motivo && update in motivo) {
+                motivo[update] = req.body[update];
+            }
         });
-        yield motivo.save();
-        (0, logger_1.default)('info', `Motivo atualizado: ${motivo._id}`);
-        res.send(motivo);
+        yield docRef.update(motivo);
+        (0, logger_1.default)('info', `Motivo atualizado: ${docRef.id}`);
+        res.send(Object.assign({ id: docRef.id }, motivo));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar motivo:', error);
@@ -87,13 +95,15 @@ exports.updateMotivo = updateMotivo;
 // Deletar um motivo específico
 const deleteMotivo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const motivo = yield motivo_1.default.findByIdAndDelete(req.params.id);
-        if (!motivo) {
+        const docRef = motivosCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Motivo não encontrado: ${req.params.id}`);
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Motivo deletado: ${motivo._id}`);
-        res.send(motivo);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Motivo deletado: ${docRef.id}`);
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar motivo:', error);

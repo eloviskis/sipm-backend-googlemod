@@ -1,7 +1,8 @@
 import admin from 'firebase-admin';
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import User, { IUser } from '../models/user';
+import { User as IUser, User } from '../models/user';
+import { User } from '../models/user'; // Add this line to import the User model
 import logger from '../middlewares/logger';
 
 // Inicializar Firebase Admin SDK
@@ -29,6 +30,7 @@ export const deserializeUser = async (uid: string, done: any) => {
     const user = await User.findOne({ uid: userRecord.uid });
     done(null, user);
   } catch (error) {
+    logger('error', 'Error deserializing user', { error });
     done(error, null);
   }
 };
@@ -54,9 +56,10 @@ export const googleAuthProvider = async (token: string, done: any) => {
   try {
     const credential = firebase.auth.GoogleAuthProvider.credential(token);
     const result = await firebase.auth().signInWithCredential(credential);
-    const user = await findOrCreateUser(result.user?.uid, result.user?.email!, result.user?.displayName!);
+    const user = await findOrCreateUser(result.user?.uid!, result.user?.email!, result.user?.displayName!);
     done(null, user);
   } catch (error) {
+    logger('error', 'Google auth provider error', { error });
     done(error, false);
   }
 };
@@ -66,9 +69,10 @@ export const facebookAuthProvider = async (token: string, done: any) => {
   try {
     const credential = firebase.auth.FacebookAuthProvider.credential(token);
     const result = await firebase.auth().signInWithCredential(credential);
-    const user = await findOrCreateUser(result.user?.uid, result.user?.email!, result.user?.displayName!);
+    const user = await findOrCreateUser(result.user?.uid!, result.user?.email!, result.user?.displayName!);
     done(null, user);
   } catch (error) {
+    logger('error', 'Facebook auth provider error', { error });
     done(error, false);
   }
 };
@@ -80,6 +84,7 @@ export const linkedInAuthProvider = async (token: string, done: any) => {
     const user = await findOrCreateUser(userRecord.uid, userRecord.email!, userRecord.name!);
     done(null, user);
   } catch (error) {
+    logger('error', 'LinkedIn auth provider error', { error });
     done(error, false);
   }
 };

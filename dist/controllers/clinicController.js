@@ -13,19 +13,33 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteClinic = exports.getClinic = exports.getClinics = exports.updateClinic = exports.createClinic = void 0;
-const clinic_1 = __importDefault(require("../models/clinic"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+const clinicsCollection = db.collection('clinics');
+// Função para validar dados da clínica
+const validateClinic = (clinic) => {
+    if (!clinic.name) {
+        throw new Error('O nome da clínica é obrigatório.');
+    }
+    if (!clinic.financialResponsible) {
+        throw new Error('O responsável financeiro é obrigatório.');
+    }
+    // Adicione outras validações necessárias
+};
 // Criar uma nova clínica
 const createClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const clinic = new clinic_1.default(req.body);
-        const savedClinic = yield clinic.save();
-        (0, logger_1.default)('info', `Clínica criada: ${savedClinic._id}`); // Adicionando log de criação de clínica
-        res.status(201).send(savedClinic);
+        const clinic = req.body;
+        validateClinic(clinic);
+        const docRef = yield clinicsCollection.add(clinic);
+        const savedClinic = yield docRef.get();
+        (0, logger_1.default)('info', `Clínica criada: ${docRef.id}`); // Adicionando log de criação de clínica
+        res.status(201).send(Object.assign({ id: docRef.id }, savedClinic.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar clínica:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: error.message });
     }
 });
 exports.createClinic = createClinic;
@@ -38,68 +52,73 @@ const updateClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const clinic = yield clinic_1.default.findById(req.params.id);
-        if (!clinic) {
+        const docRef = clinicsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Clínica não encontrada.' });
         }
+        const clinic = doc.data();
         updates.forEach((update) => {
-            if (update in clinic) {
+            if (clinic && update in clinic) {
                 clinic[update] = req.body[update];
             }
         });
-        yield clinic.save();
-        (0, logger_1.default)('info', `Clínica atualizada: ${clinic._id}`); // Adicionando log de atualização de clínica
-        res.send(clinic);
+        yield docRef.update(clinic);
+        (0, logger_1.default)('info', `Clínica atualizada: ${docRef.id}`); // Adicionando log de atualização de clínica
+        res.send(Object.assign({ id: docRef.id }, clinic));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar clínica:', error); // Adicionando log de erro
-        res.status(400).send(error);
+        res.status(400).send({ error: error.message });
     }
 });
 exports.updateClinic = updateClinic;
 // Obter todas as clínicas
 const getClinics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const clinics = yield clinic_1.default.find({});
+        const snapshot = yield clinicsCollection.get();
+        const clinics = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(clinics);
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter clínicas:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.getClinics = getClinics;
 // Obter uma clínica específica
 const getClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const clinic = yield clinic_1.default.findById(req.params.id);
-        if (!clinic) {
+        const doc = yield clinicsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Clínica não encontrada.' });
         }
-        res.send(clinic);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter clínica:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.getClinic = getClinic;
 // Deletar uma clínica
 const deleteClinic = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const clinic = yield clinic_1.default.findByIdAndDelete(req.params.id);
-        if (!clinic) {
+        const docRef = clinicsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Clínica não encontrada: ${req.params.id}`); // Adicionando log de erro
-            return res.status(404).send();
+            return res.status(404).send({ error: 'Clínica não encontrada.' });
         }
-        (0, logger_1.default)('info', `Clínica deletada: ${clinic._id}`); // Adicionando log de deleção de clínica
-        res.send(clinic);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Clínica deletada: ${docRef.id}`); // Adicionando log de deleção de clínica
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar clínica:', error); // Adicionando log de erro
-        res.status(500).send(error);
+        res.status(500).send({ error: error.message });
     }
 });
 exports.deleteClinic = deleteClinic;

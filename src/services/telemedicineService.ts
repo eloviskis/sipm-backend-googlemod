@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, calendar_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import logger from '../middlewares/logger'; // Adicionando middleware de logger
 
@@ -13,10 +13,16 @@ oAuth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN!,
 });
 
+// Interface para VideoRoom
+interface VideoRoom {
+    sid: string;
+    hangoutLink: string;
+}
+
 // Função para criar uma sala de vídeo no Google Meet através do Google Calendar
-export const createVideoRoom = async (roomName: string) => {
+export const createVideoRoom = async (roomName: string): Promise<VideoRoom> => {
     try {
-        const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+        const calendar: calendar_v3.Calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
         const event = {
             summary: roomName,
@@ -51,7 +57,10 @@ export const createVideoRoom = async (roomName: string) => {
         const createdEvent = response.data;
         if (createdEvent.hangoutLink) {
             logger('info', `Sala de vídeo criada: ${createdEvent.hangoutLink}`); // Adicionando log de criação de sala
-            return createdEvent;
+            return {
+                sid: createdEvent.id || '', // Adiciona a propriedade 'sid' com o ID do evento
+                hangoutLink: createdEvent.hangoutLink
+            };
         } else {
             logger('error', 'Erro ao criar sala de vídeo: link não gerado');
             throw new Error('Erro ao criar sala de vídeo: link não gerado');

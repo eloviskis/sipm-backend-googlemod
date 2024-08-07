@@ -15,21 +15,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendReportNotification = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+// Verificação das variáveis de ambiente necessárias
+const gmailUser = process.env.GMAIL_USER;
+const gmailPass = process.env.GMAIL_PASS;
+const appUrl = process.env.APP_URL;
+if (!gmailUser || !gmailPass || !appUrl) {
+    throw new Error("Variáveis de ambiente GMAIL_USER, GMAIL_PASS e APP_URL são obrigatórias.");
+}
 // Configuração do Nodemailer
 const transporter = nodemailer_1.default.createTransport({
     service: 'Gmail',
     auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
+        user: gmailUser,
+        pass: gmailPass,
     },
 });
 // Função para enviar notificação de novo relatório
 const sendReportNotification = (email, reportId) => __awaiter(void 0, void 0, void 0, function* () {
     const mailOptions = {
-        from: process.env.GMAIL_USER,
+        from: gmailUser,
         to: email,
         subject: 'Novo Relatório Gerado',
-        text: `Um novo relatório foi gerado. Você pode visualizá-lo no seguinte link: ${process.env.APP_URL}/reports/${reportId}`,
+        text: `Um novo relatório foi gerado. Você pode visualizá-lo no seguinte link: ${appUrl}/reports/${reportId}`,
     };
     try {
         const info = yield transporter.sendMail(mailOptions);

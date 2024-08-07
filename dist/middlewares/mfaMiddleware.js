@@ -13,26 +13,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const speakeasy_1 = __importDefault(require("speakeasy"));
-const user_1 = __importDefault(require("../models/user")); // Certifique-se de importar o modelo de usuário
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const usersCollection = db.collection('users');
 const mfaMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     if (req.user) {
-        const user = yield user_1.default.findById(req.user._id);
-        if (user && user.mfaEnabled) {
-            const token = req.header('x-mfa-token');
-            if (!token) {
-                return res.status(401).send({ error: 'Token MFA não fornecido' });
+        try {
+            const userDoc = yield usersCollection.doc(req.user._id).get();
+            if (!userDoc.exists) {
+                return res.status(404).send({ error: 'Usuário não encontrado' });
             }
-            if (!user.mfaSecret) {
-                return res.status(500).send({ error: 'Secret MFA não configurado' });
+            const user = userDoc.data();
+            if (user && user.mfaEnabled) {
+                const token = req.header('x-mfa-token');
+                if (!token) {
+                    return res.status(401).send({ error: 'Token MFA não fornecido' });
+                }
+                if (!user.mfaSecret) {
+                    return res.status(500).send({ error: 'Secret MFA não configurado' });
+                }
+                const verified = speakeasy_1.default.totp.verify({
+                    secret: user.mfaSecret,
+                    encoding: 'base32',
+                    token,
+                });
+                if (!verified) {
+                    return res.status(401).send({ error: 'Token MFA inválido' });
+                }
             }
-            const verified = speakeasy_1.default.totp.verify({
-                secret: user.mfaSecret,
-                encoding: 'base32',
-                token,
-            });
-            if (!verified) {
-                return res.status(401).send({ error: 'Token MFA inválido' });
-            }
+        }
+        catch (error) {
+            (0, logger_1.default)('error', `Erro ao verificar MFA: ${error.message}`);
+            return res.status(500).send({ error: 'Erro interno do servidor' });
         }
     }
     next();

@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteAccountReceivable = exports.updateAccountReceivable = exports.getAccountReceivable = exports.getAccountsReceivable = exports.createAccountReceivable = void 0;
-const accountsReceivable_1 = __importDefault(require("../models/accountsReceivable")); // Update the path to the correct module
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+const accountsReceivableCollection = db.collection('accountsReceivable');
 // Criar uma nova conta a receber
 const createAccountReceivable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountReceivable = new accountsReceivable_1.default(req.body);
-        const savedAccount = yield accountReceivable.save();
-        (0, logger_1.default)('info', `Conta a receber criada: ${savedAccount._id}`); // Adicionando log de criação
-        res.status(201).send(savedAccount);
+        const accountReceivable = req.body;
+        const docRef = yield accountsReceivableCollection.add(accountReceivable);
+        const savedAccount = yield docRef.get();
+        (0, logger_1.default)('info', `Conta a receber criada: ${docRef.id}`); // Adicionando log de criação
+        res.status(201).send(Object.assign({ id: docRef.id }, savedAccount.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar conta a receber:', error); // Adicionando log de erro
@@ -32,7 +35,8 @@ exports.createAccountReceivable = createAccountReceivable;
 // Obter todas as contas a receber
 const getAccountsReceivable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountsReceivable = yield accountsReceivable_1.default.find({});
+        const snapshot = yield accountsReceivableCollection.get();
+        const accountsReceivable = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(accountsReceivable);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getAccountsReceivable = getAccountsReceivable;
 // Obter uma conta a receber específica
 const getAccountReceivable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountReceivable = yield accountsReceivable_1.default.findById(req.params.id);
-        if (!accountReceivable) {
+        const doc = yield accountsReceivableCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(accountReceivable);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter conta a receber:', error); // Adicionando log de erro
@@ -66,15 +70,17 @@ const updateAccountReceivable = (req, res) => __awaiter(void 0, void 0, void 0, 
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const accountReceivable = yield accountsReceivable_1.default.findById(req.params.id);
-        if (!accountReceivable) {
+        const docRef = accountsReceivableCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+        const accountReceivable = doc.data();
         updates.forEach((update) => (accountReceivable[update] = req.body[update]));
-        yield accountReceivable.save();
-        (0, logger_1.default)('info', `Conta a receber atualizada: ${accountReceivable._id}`); // Adicionando log de atualização
-        res.send(accountReceivable);
+        yield docRef.update(accountReceivable);
+        (0, logger_1.default)('info', `Conta a receber atualizada: ${docRef.id}`); // Adicionando log de atualização
+        res.send(Object.assign({ id: docRef.id }, accountReceivable));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar conta a receber:', error); // Adicionando log de erro
@@ -85,13 +91,15 @@ exports.updateAccountReceivable = updateAccountReceivable;
 // Deletar uma conta a receber
 const deleteAccountReceivable = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const accountReceivable = yield accountsReceivable_1.default.findByIdAndDelete(req.params.id);
-        if (!accountReceivable) {
+        const docRef = accountsReceivableCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Conta a receber não encontrada: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Conta a receber deletada: ${accountReceivable._id}`); // Adicionando log de deleção
-        res.send(accountReceivable);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Conta a receber deletada: ${req.params.id}`); // Adicionando log de deleção
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar conta a receber:', error); // Adicionando log de erro

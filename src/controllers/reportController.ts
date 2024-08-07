@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import admin from 'firebase-admin';
-import logger from '../middlewares/logger'; // Adicionando middleware de logger
-import { sendReportNotification } from '../services/reportNotificationService'; // Adicionando serviço de notificação
+import logger from '../middlewares/logger';
+import { sendReportNotification } from '../services/reportNotificationService';
 import { IUser } from '../models/user';
 
 interface AuthRequest extends Request {

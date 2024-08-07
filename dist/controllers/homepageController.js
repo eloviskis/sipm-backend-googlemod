@@ -13,22 +13,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHomepageContent = void 0;
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const homepageContentDoc = db.collection('homepageContent').doc('mainContent');
+// Função para obter o conteúdo da homepage
 const getHomepageContent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const content = {
-            heroTitle: 'Bem-vindo ao SIPM',
-            heroSubtitle: 'O Sistema Integrado de Prontuário Médico (SIPM) facilita a gestão de sua clínica médica.',
-            heroButtonText: 'Comece Agora',
-            heroImage: '',
-            features: [
-                { title: 'Feature 1', description: 'Description 1', icon: 'icon1.png' },
-                { title: 'Feature 2', description: 'Description 2', icon: 'icon2.png' },
-                { title: 'Feature 3', description: 'Description 3', icon: 'icon3.png' },
-            ],
-        };
+        const doc = yield homepageContentDoc.get();
+        if (!doc.exists) {
+            return res.status(404).json({ message: 'Conteúdo da homepage não encontrado' });
+        }
+        const content = doc.data();
         (0, logger_1.default)('info', 'Conteúdo da homepage recuperado com sucesso.');
-        res.status(200).send(content);
+        res.status(200).send(Object.assign({ id: doc.id }, content));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao recuperar conteúdo da homepage:', error);

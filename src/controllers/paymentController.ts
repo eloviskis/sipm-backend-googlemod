@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import admin from 'firebase-admin';
 import { processPayment, generateInvoice } from '../services/paymentService';
-import logger from '../middlewares/logger'; // Certifique-se de que logger está correto
+import logger from '../middlewares/logger';
 
 const db = admin.firestore();
 const paymentsCollection = db.collection('payments');
@@ -33,14 +33,14 @@ export const createPayment = async (req: Request, res: Response) => {
             const savedPayment = await docRef.get();
             const invoice = await generateInvoice(savedPayment.data());
 
-            logger.info(`Pagamento processado: ${docRef.id}`);
+            logger('info', `Pagamento processado: ${docRef.id}`);
             res.status(201).send({ payment: { id: docRef.id, ...savedPayment.data() }, invoice });
         } else {
-            logger.error(`Erro ao processar pagamento: ${paymentResult.error}`);
+            logger('error', `Erro ao processar pagamento: ${paymentResult.error}`);
             res.status(400).send({ error: paymentResult.error });
         }
     } catch (error: any) {
-        logger.error(`Erro ao processar pagamento: ${error.message}`);
+        logger('error', `Erro ao processar pagamento: ${error.message}`);
         res.status(500).send({ error: error.message });
     }
 };
@@ -52,7 +52,7 @@ export const getPayments = async (req: Request, res: Response) => {
         const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.send(payments);
     } catch (error: any) {
-        logger.error(`Erro ao obter pagamentos: ${error.message}`);
+        logger('error', `Erro ao obter pagamentos: ${error.message}`);
         res.status(500).send({ error: error.message });
     }
 };
@@ -62,12 +62,12 @@ export const getPayment = async (req: Request, res: Response) => {
     try {
         const doc = await paymentsCollection.doc(req.params.id).get();
         if (!doc.exists) {
-            logger.error(`Pagamento não encontrado: ${req.params.id}`);
+            logger('error', `Pagamento não encontrado: ${req.params.id}`);
             return res.status(404).send({ error: 'Pagamento não encontrado' });
         }
         res.send({ id: doc.id, ...doc.data() });
     } catch (error: any) {
-        logger.error(`Erro ao obter pagamento: ${error.message}`);
+        logger('error', `Erro ao obter pagamento: ${error.message}`);
         res.status(500).send({ error: error.message });
     }
 };
@@ -78,15 +78,15 @@ export const deletePayment = async (req: Request, res: Response) => {
         const docRef = paymentsCollection.doc(req.params.id);
         const doc = await docRef.get();
         if (!doc.exists) {
-            logger.error(`Pagamento não encontrado: ${req.params.id}`);
+            logger('error', `Pagamento não encontrado: ${req.params.id}`);
             return res.status(404).send({ error: 'Pagamento não encontrado' });
         }
         await docRef.delete();
 
-        logger.info(`Pagamento deletado: ${docRef.id}`);
+        logger('info', `Pagamento deletado: ${docRef.id}`);
         res.send({ id: docRef.id, ...doc.data() });
     } catch (error: any) {
-        logger.error(`Erro ao deletar pagamento: ${error.message}`);
+        logger('error', `Erro ao deletar pagamento: ${error.message}`);
         res.status(500).send({ error: error.message });
     }
 };

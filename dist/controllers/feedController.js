@@ -13,11 +13,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createFeedItem = exports.getFeedItems = void 0;
-const feedItem_1 = __importDefault(require("../models/feedItem")); // Certifique-se de criar o modelo FeedItem
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const db = firebase_admin_1.default.firestore();
+const feedItemsCollection = db.collection('feedItems');
 // Função para obter itens do feed
 const getFeedItems = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const feedItems = yield feedItem_1.default.find();
+        const snapshot = yield feedItemsCollection.get();
+        const feedItems = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.status(200).send(feedItems);
     }
     catch (error) {
@@ -28,9 +31,10 @@ exports.getFeedItems = getFeedItems;
 // Função para criar um novo item do feed
 const createFeedItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const feedItem = new feedItem_1.default(req.body);
-        yield feedItem.save();
-        res.status(201).send(feedItem);
+        const feedItem = req.body;
+        const docRef = yield feedItemsCollection.add(feedItem);
+        const savedFeedItem = yield docRef.get();
+        res.status(201).send(Object.assign({ id: docRef.id }, savedFeedItem.data()));
     }
     catch (error) {
         res.status(400).send({ error: 'Erro ao criar item do feed' });

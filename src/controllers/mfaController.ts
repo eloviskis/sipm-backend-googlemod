@@ -2,24 +2,30 @@ import { Request, Response } from 'express';
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import admin from 'firebase-admin';
-import logger from '../middlewares/logger'; // Adicionando middleware de logger
+import logger from '../middlewares/logger';
+import { IUser } from '../models/user';
 
 const db = admin.firestore();
 const usersCollection = db.collection('users');
 
+// Interface estendida para incluir user no Request
+interface AuthRequest extends Request {
+    user?: IUser;
+}
+
 // Função para configurar MFA
-export const configureMFA = async (req: Request, res: Response) => {
+export const configureMFA = async (req: AuthRequest, res: Response) => {
     try {
         const secret = speakeasy.generateSecret({ length: 20 });
 
         if (!secret.otpauth_url) {
-            logger('error', 'Erro ao gerar o URL OTP Auth'); // Adicionando log de erro
+            logger('error', 'Erro ao gerar o URL OTP Auth');
             return res.status(500).send({ error: 'Erro ao gerar o URL OTP Auth' });
         }
 
-        const userId = req.user?.uid; // Assumindo que o ID do usuário está disponível em req.user
+        const userId = req.user?.uid;
         if (!userId) {
-            logger('error', 'Usuário não autenticado'); // Adicionando log de erro
+            logger('error', 'Usuário não autenticado');
             return res.status(401).send({ error: 'Usuário não autenticado' });
         }
 
@@ -28,15 +34,15 @@ export const configureMFA = async (req: Request, res: Response) => {
 
         qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
             if (err) {
-                logger('error', `Erro ao gerar QR Code: ${err.message}`); // Adicionando log de erro
+                logger('error', `Erro ao gerar QR Code: ${err.message}`);
                 return res.status(500).send({ error: 'Erro ao gerar QR Code' });
             }
 
-            logger('info', `MFA configurado para o usuário: ${userId}`); // Adicionando log de sucesso
+            logger('info', `MFA configurado para o usuário: ${userId}`);
             res.send({ secret: secret.base32, qrCode: data_url });
         });
     } catch (error: any) {
-        logger('error', `Erro ao configurar MFA: ${error.message}`); // Adicionando log de erro
+        logger('error', `Erro ao configurar MFA: ${error.message}`);
         res.status(500).send({ error: 'Erro ao configurar MFA' });
     }
 };
@@ -47,14 +53,14 @@ export const verifyMFA = async (req: Request, res: Response) => {
 
     try {
         if (!token || !userId) {
-            logger('error', 'Token ou ID do usuário não fornecido'); // Adicionando log de erro
+            logger('error', 'Token ou ID do usuário não fornecido');
             return res.status(400).send({ error: 'Token e ID do usuário são obrigatórios' });
         }
 
         // Recuperar o segredo MFA do Firestore
         const userDoc = await usersCollection.doc(userId).get();
         if (!userDoc.exists) {
-            logger('error', `Usuário não encontrado: ${userId}`); // Adicionando log de erro
+            logger('error', `Usuário não encontrado: ${userId}`);
             return res.status(404).send({ error: 'Usuário não encontrado' });
         }
 
@@ -62,7 +68,7 @@ export const verifyMFA = async (req: Request, res: Response) => {
         const secret = user?.mfaSecret;
 
         if (!secret) {
-            logger('error', `MFA não configurado para o usuário: ${userId}`); // Adicionando log de erro
+            logger('error', `MFA não configurado para o usuário: ${userId}`);
             return res.status(400).send({ error: 'MFA não configurado para este usuário' });
         }
 
@@ -73,14 +79,14 @@ export const verifyMFA = async (req: Request, res: Response) => {
         });
 
         if (verified) {
-            logger('info', `MFA verificado com sucesso para o usuário: ${userId}`); // Adicionando log de sucesso
+            logger('info', `MFA verificado com sucesso para o usuário: ${userId}`);
             res.send({ message: 'MFA verificado com sucesso' });
         } else {
-            logger('error', `Código MFA inválido para o usuário: ${userId}`); // Adicionando log de erro
+            logger('error', `Código MFA inválido para o usuário: ${userId}`);
             res.status(400).send({ error: 'Código MFA inválido' });
         }
     } catch (error: any) {
-        logger('error', `Erro ao verificar MFA: ${error.message}`); // Adicionando log de erro
+        logger('error', `Erro ao verificar MFA: ${error.message}`);
         res.status(500).send({ error: 'Erro ao verificar MFA' });
     }
 };

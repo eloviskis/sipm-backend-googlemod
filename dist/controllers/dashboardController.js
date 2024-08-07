@@ -13,14 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDashboardData = void 0;
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+// Função para obter dados do painel
 const getDashboardData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Simulação de dados para o painel
+        // Recuperar dados do Firestore
+        const usersSnapshot = yield db.collection('users').get();
+        const reportsSnapshot = yield db.collection('reports').get();
+        const appointmentsSnapshot = yield db.collection('appointments').get();
+        // Construir dados do painel
         const data = [
-            { id: 1, title: 'Usuários Registrados', description: 'Total de 1500 usuários' },
-            { id: 2, title: 'Relatórios Gerados', description: 'Total de 300 relatórios' },
-            { id: 3, title: 'Consultas Agendadas', description: 'Total de 200 consultas' },
+            { id: 1, title: 'Usuários Registrados', description: `Total de ${usersSnapshot.size} usuários` },
+            { id: 2, title: 'Relatórios Gerados', description: `Total de ${reportsSnapshot.size} relatórios` },
+            { id: 3, title: 'Consultas Agendadas', description: `Total de ${appointmentsSnapshot.size} consultas` },
         ];
         (0, logger_1.default)('info', 'Dados do painel obtidos com sucesso');
         res.status(200).send(data);

@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deletePreConsultation = exports.updatePreConsultation = exports.getPreConsultation = exports.getPreConsultations = exports.createPreConsultation = void 0;
-const preConsultation_1 = __importDefault(require("../models/preConsultation"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger"));
+const db = firebase_admin_1.default.firestore();
+const preConsultationsCollection = db.collection('preConsultations');
 // Criar uma nova pré-consulta
 const createPreConsultation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const preConsultation = new preConsultation_1.default(req.body);
-        yield preConsultation.save();
-        (0, logger_1.default)('info', `Pré-consulta criada: ${preConsultation._id}`);
-        res.status(201).send(preConsultation);
+        const preConsultation = req.body;
+        const docRef = yield preConsultationsCollection.add(preConsultation);
+        const savedPreConsultation = yield docRef.get();
+        (0, logger_1.default)('info', `Pré-consulta criada: ${docRef.id}`);
+        res.status(201).send(Object.assign({ id: docRef.id }, savedPreConsultation.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar pré-consulta:', error);
@@ -32,7 +35,8 @@ exports.createPreConsultation = createPreConsultation;
 // Obter todas as pré-consultas
 const getPreConsultations = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const preConsultations = yield preConsultation_1.default.find({});
+        const snapshot = yield preConsultationsCollection.get();
+        const preConsultations = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(preConsultations);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getPreConsultations = getPreConsultations;
 // Obter uma pré-consulta específica
 const getPreConsultation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const preConsultation = yield preConsultation_1.default.findById(req.params.id);
-        if (!preConsultation) {
+        const doc = yield preConsultationsCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
-        res.send(preConsultation);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter pré-consulta:', error);
@@ -66,17 +70,21 @@ const updatePreConsultation = (req, res) => __awaiter(void 0, void 0, void 0, fu
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const preConsultation = yield preConsultation_1.default.findById(req.params.id);
-        if (!preConsultation) {
+        const docRef = preConsultationsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
+        const preConsultation = doc.data();
         updates.forEach((update) => {
-            preConsultation[update] = req.body[update]; // Use Type Assertion
+            if (preConsultation && update in preConsultation) {
+                preConsultation[update] = req.body[update];
+            }
         });
-        yield preConsultation.save();
-        (0, logger_1.default)('info', `Pré-consulta atualizada: ${preConsultation._id}`);
-        res.send(preConsultation);
+        yield docRef.update(preConsultation);
+        (0, logger_1.default)('info', `Pré-consulta atualizada: ${docRef.id}`);
+        res.send(Object.assign({ id: docRef.id }, preConsultation));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar pré-consulta:', error);
@@ -87,13 +95,15 @@ exports.updatePreConsultation = updatePreConsultation;
 // Deletar uma pré-consulta específica
 const deletePreConsultation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const preConsultation = yield preConsultation_1.default.findByIdAndDelete(req.params.id);
-        if (!preConsultation) {
+        const docRef = preConsultationsCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Pré-consulta não encontrada: ${req.params.id}`);
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Pré-consulta deletada: ${preConsultation._id}`);
-        res.send(preConsultation);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Pré-consulta deletada: ${docRef.id}`);
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar pré-consulta:', error);

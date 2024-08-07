@@ -13,15 +13,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteTheme = exports.updateTheme = exports.getTheme = exports.getThemes = exports.createTheme = void 0;
-const theme_1 = __importDefault(require("../models/theme"));
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const logger_1 = __importDefault(require("../middlewares/logger")); // Adicionando middleware de logger
+const db = firebase_admin_1.default.firestore();
+const themesCollection = db.collection('themes');
 // Função para criar um novo tema
 const createTheme = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const theme = new theme_1.default(req.body);
-        const savedTheme = yield theme.save();
-        (0, logger_1.default)('info', `Tema criado: ${savedTheme._id}`); // Adicionando log de criação de tema
-        res.status(201).send(savedTheme);
+        const theme = req.body;
+        const docRef = yield themesCollection.add(theme);
+        const savedTheme = yield docRef.get();
+        (0, logger_1.default)('info', `Tema criado: ${docRef.id}`); // Adicionando log de criação de tema
+        res.status(201).send(Object.assign({ id: docRef.id }, savedTheme.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao criar tema:', error); // Adicionando log de erro
@@ -32,7 +35,8 @@ exports.createTheme = createTheme;
 // Função para obter todos os temas
 const getThemes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const themes = yield theme_1.default.find({});
+        const snapshot = yield themesCollection.get();
+        const themes = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
         res.send(themes);
     }
     catch (error) {
@@ -44,12 +48,12 @@ exports.getThemes = getThemes;
 // Função para obter um tema específico
 const getTheme = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const theme = yield theme_1.default.findById(req.params.id);
-        if (!theme) {
+        const doc = yield themesCollection.doc(req.params.id).get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Tema não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        res.send(theme);
+        res.send(Object.assign({ id: doc.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao obter tema:', error); // Adicionando log de erro
@@ -66,19 +70,21 @@ const updateTheme = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(400).send({ error: 'Atualizações inválidas!' });
     }
     try {
-        const theme = yield theme_1.default.findById(req.params.id);
-        if (!theme) {
+        const docRef = themesCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Tema não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
+        const theme = doc.data();
         updates.forEach((update) => {
-            if (update in theme) {
+            if (theme && update in theme) {
                 theme[update] = req.body[update];
             }
         });
-        yield theme.save();
-        (0, logger_1.default)('info', `Tema atualizado: ${theme._id}`); // Adicionando log de atualização de tema
-        res.send(theme);
+        yield docRef.update(theme);
+        (0, logger_1.default)('info', `Tema atualizado: ${docRef.id}`); // Adicionando log de atualização de tema
+        res.send(Object.assign({ id: docRef.id }, theme));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao atualizar tema:', error); // Adicionando log de erro
@@ -89,13 +95,15 @@ exports.updateTheme = updateTheme;
 // Função para deletar um tema específico
 const deleteTheme = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const theme = yield theme_1.default.findByIdAndDelete(req.params.id);
-        if (!theme) {
+        const docRef = themesCollection.doc(req.params.id);
+        const doc = yield docRef.get();
+        if (!doc.exists) {
             (0, logger_1.default)('error', `Tema não encontrado: ${req.params.id}`); // Adicionando log de erro
             return res.status(404).send();
         }
-        (0, logger_1.default)('info', `Tema deletado: ${theme._id}`); // Adicionando log de deleção de tema
-        res.send(theme);
+        yield docRef.delete();
+        (0, logger_1.default)('info', `Tema deletado: ${docRef.id}`); // Adicionando log de deleção de tema
+        res.send(Object.assign({ id: docRef.id }, doc.data()));
     }
     catch (error) {
         (0, logger_1.default)('error', 'Erro ao deletar tema:', error); // Adicionando log de erro

@@ -24,6 +24,7 @@ import logger from './middlewares/logger'; // Adicionando logger
 import { ensureHttps } from './middlewares/httpsRedirect'; // Adicionando redirecionamento HTTPS
 
 const app = express();
+const port = process.env.PORT || 8080;
 
 // Middleware para redirecionar HTTP para HTTPS
 if (process.env.NODE_ENV === 'production') {
@@ -40,11 +41,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Configurar HTTPS com os certificados
-const sslOptions = {
-    key: fs.readFileSync(path.resolve(__dirname, '../certs/server.key')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../certs/server.cert'))
-};
+// Configurar HTTPS com os certificados (comentado para o deploy no GCP)
+// const sslOptions = {
+//     key: fs.readFileSync(path.resolve(__dirname, '../certs/server.key')),
+//     cert: fs.readFileSync(path.resolve(__dirname, '../certs/server.cert'))
+// };
 
 // Rotas
 app.use('/api/appointments', appointmentRoutes);
@@ -73,7 +74,7 @@ app.get('/', (req, res) => {
     res.send('Olá mundo HTTPS!');
 });
 
-// Iniciando o servidor HTTPS
-https.createServer(sslOptions, app).listen(3001, () => {
-    console.log('Servidor HTTPS rodando na porta 3001');
+// Iniciando o servidor HTTP (modificado para deploy no GCP)
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
 });

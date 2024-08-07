@@ -12,10 +12,15 @@ const generateInvoice = (invoiceData) => {
         const doc = new pdfkit_1.default();
         const invoicePath = path_1.default.join(__dirname, `../../invoices/invoice-${Date.now()}.pdf`);
         doc.pipe(fs_1.default.createWriteStream(invoicePath));
-        // Adicione conteúdo ao PDF aqui
-        doc.text(`Fatura para ${invoiceData.clientName}`, 50, 50);
-        doc.text(`Data: ${new Date().toLocaleDateString()}`, 50, 70);
-        doc.text(`Total: R$${invoiceData.total}`, 50, 90);
+        // Cabeçalho da fatura
+        doc.fontSize(20).text(`Fatura para ${invoiceData.clientName}`, 50, 50);
+        doc.fontSize(12).text(`Data: ${invoiceData.date}`, 50, 80);
+        doc.text(`Total: R$${invoiceData.total.toFixed(2)}`, 50, 100);
+        // Lista de itens
+        doc.moveDown();
+        invoiceData.items.forEach((item, index) => {
+            doc.text(`${index + 1}. ${item.description}: R$${item.amount.toFixed(2)}`);
+        });
         doc.end();
         doc.on('finish', () => {
             resolve(invoicePath);
